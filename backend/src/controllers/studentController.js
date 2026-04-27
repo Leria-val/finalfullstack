@@ -1,5 +1,5 @@
 import Product from "../models/Product.js";
-import Category from "../models/Category.js";
+import Category from "../models/Student.js";
 
 const categoryController = {
   
@@ -13,7 +13,7 @@ const categoryController = {
         success: true,
         data: categories,
         message: "Categorias listadas com sucesso!",
-      });
+      })
     } catch (error) {
       return res.status(500).json({
         success: false,
