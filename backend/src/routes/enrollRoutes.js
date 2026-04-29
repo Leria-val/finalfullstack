@@ -1,11 +1,11 @@
 import express from "express";
-import { classController } from "../controllers/classController.js";
+import { enrollController } from "../controllers/enrollController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", authMiddleware, classController.getAll);
-router.post("/", authMiddleware, roleMiddleware("admin"), classController.create);
+// Apenas Admin ou Professor podem matricular alunos
+router.post("/", authMiddleware, roleMiddleware("professor"), enrollController.store);
 
 export default router;

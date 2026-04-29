@@ -4,6 +4,15 @@ import bcrypt from 'bcrypt';
 
 
 const User = sequelize.define('User', {
+
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: true
+    }
+  },
+
   email: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -23,19 +32,26 @@ const User = sequelize.define('User', {
   role:{
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: 'user',
+    defaultValue: 'STUDENT',
      validate: {
-      isIn: [['user', 'admin']]
+      isIn: [['ADMIN', 'TEACHER', 'STUDENT']]
     }
   }
 }, {
-  hook: {
-    beforeCreate: async (user) => {
-      if (user.password) {
+  hooks: {
+    beforeSave: async (user) => {
+      if (user.changed('password')) {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
       }
-    }
+     }
+    },
+
+  defaultScope: {
+    attributes: { exclude: ['password'] }
+  },
+  scopes: {
+    withPassword: { attributes: {} }
   }
 });
 

@@ -19,12 +19,19 @@ const parts = authHeader.split(" ");
   const token = parts[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "segredo");
-    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET );
+
+    req.userId = decoded.id;
+    req.userRole = decoded.role;
     req.user = decoded; 
-    next();
+
+    return next();
   } catch (error) {
-    console.error("Erro na verificação do JWT:", error.message);
-    return res.status(401).json({ error: "Token inválido ou expirado" });
+
+    const message = error.name === 'TokenExpiredError'
+    ? "Sua sessao expirou. Faca login novamente."
+    : "Token inválido.";
+
+    return res.status(401).json({ error: message });
   }
 }

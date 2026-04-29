@@ -7,18 +7,21 @@ const sequelize = new Sequelize(
   process.env.DB_USER, 
   process.env.DB_PASS, 
   {
-    //host: process.env.DB_HOST || "localhost",
-    host: "127.0.0.1",
+    host: process.env.DB_HOST || "127.0.0.1",
     dialect: "postgres", 
     port: process.env.DB_PORT || 5432,          
     logging: false,
+    define: {
+      timestamps: true,
+      underscored: true
+    }
   }
 );
 
 async function connect() {
   try{
   await sequelize.authenticate();
-  await sequelize.sync({ force: true }); //asegura que as tabelas existam mas é opcional :p
+  await sequelize.sync({ alter: true }); //asegura que as tabelas existam mas é opcional :p
 
   console.log("conexão com PostgreSQL estabelecida.");
 } catch (error) {

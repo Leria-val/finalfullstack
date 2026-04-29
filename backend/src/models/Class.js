@@ -1,30 +1,27 @@
-import { DataTypes, DATE } from "sequelize";
+import { DataTypes } from "sequelize";
 import { sequelize } from "../config/connection.js";
-import Category  from "./Student.js";
+import User from "./User.js";
 
-const Product = sequelize.define("Product",{
-    name:{
-        type: DataTypes.STRING,
-        allowNull: false
+const Class = sequelize.define("Class", {
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  subject: {
+    type: DataTypes.STRING, // Disciplina (ex: Programação FullStack)
+    allowNull: false,
+  },
+  teacherId: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: User,
+      key: "id",
     },
-    price:{
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
-        min: 0
-    },
-    description: { 
-        type: DataTypes.TEXT },
-        
-    categoryId:{
-        type: DataTypes.INTEGER,
-        references:{
-            model:Category,
-            key: "id"
-        }
-    }
-})
+  },
+}, { timestamps: true });
 
-Category.hasMany(Product, {foreignKey:"categoryId", as: "products"})
-Product.belongsTo(Category,{foreignKey:"categoryId",as: "category"})
+// Relacionamento: Uma turma pertence a um professor (User)
+Class.belongsTo(User, { foreignKey: "teacherId", as: "teacher" });
+User.hasMany(Class, { foreignKey: "teacherId", as: "classes" });
 
-export default Product;
+export default Class;
