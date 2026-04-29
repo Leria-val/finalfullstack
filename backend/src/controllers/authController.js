@@ -1,5 +1,4 @@
 import User from "../models/User.js";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const SECRET = process.env.JWT_SECRET || "segredo";
@@ -8,10 +7,10 @@ const authController = {
 
   register: async (req, res) => {
     try {
-      const { email, password, role } = req.body;
+      const { name, email, password, role } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ error: "Email e senha são obrigatórios" });
+      if (!email || !password || !name) {
+        return res.status(400).json({ error: "Nome, email e senha são obrigatórios" });
       }
 
       const existingUser = await User.findOne({ where: { email } });
@@ -19,25 +18,25 @@ const authController = {
         return res.status(400).json({ error: "Este email já está cadastrado" });
       }
 
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
-      console.log(role)
-
       const user = await User.create({
+        name, 
         email,
-        password: hashedPassword,
-        role: role || 'user'
+        password,
+        role: role?.toUpperCase() || 'STUDENT'
       });
 
       res.status(201).json({ 
         message: "Usuário criado", 
         user: { 
+          id: user.id,
+          name: user.name,
           email: user.email, 
-          role: user.role } 
+          role: user.role 
+        } 
       });
 
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: "Erro ao registrar usuário:" + error.message });
     }
   },
 
@@ -49,23 +48,26 @@ const authController = {
         return res.status(400).json({ error: "Email e senha são obrigatórios" });
       }
 
-      const user = await User.findOne({ where: { email } });
+      //buscar usuario usando scope 'withPassword'
+
+      const user = await User.scope('withPassword').findOne({ where: { email } });
+
       if (!user) {
-        return res.status(404).json({ message: "Usuário não encontrado" });
+        return res.status(404).json({ error: "Usuário não encontrado" });
       }
 
       // comparar senha
-      const validPassword = await bcrypt.compare(password, user.password);
+      const isPasswordValid = await user.comparePassword(password);
 
-      if (!validPassword) {
-        return res.status(401).json({ message: "Senha inválida" });
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "Credenciais inválidas" });
       }
 
       // gerar token
       const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role }, 
+        { id: user.id, name: user.name, role: user.role }, 
         SECRET, 
-        { expiresIn: "1h" }
+        { expiresIn: "8h" }
       );
 
       return res.json({ 
@@ -73,12 +75,14 @@ const authController = {
         message: "Login realizado com sucesso", 
         token,
         user: {
+          id: user.id,
+          name: user.name,
           email: user.email,
           role: user.role
         }
       });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error:"Erro no servidor." + error.message });
     }
   },
 };
