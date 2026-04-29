@@ -1,20 +1,22 @@
-import express from "express";
-import categoryController from "../controllers/categoryController.js";
-import { authMiddleware } from "../middlewares/authMiddleware.js";
-import { roleMiddleware } from "../middlewares/roleMiddleware.js";
-import { categorySchema } from "../validations/categoryValidation.js";
-import validateMiddleware from "../middlewares/validateMiddleware.js";
+const { Router } = require('express');
+const {
+  createStudent,
+  listStudents,
+  getStudenById,
+  updateStudent,
+  deleteStudent,
+} = require('../controllers/studentController');
 
-const categoryRouter = express.Router();
+const authMiddleware = require('../middlewares/authMiddleware');
+const roleMiddleware = require('../middlewares/roleMiddleware');
 
-categoryRouter.get("/", categoryController.getAll);
+const router = Router();
 
-categoryRouter.post(
-  "/",
-  authMiddleware,
-  roleMiddleware("admin"),
-  validateMiddleware(categorySchema),
-  categoryController.create
-);
+router.use(authMiddleware);
+router.post('/', roleMiddleware(['admin']), createStudent);
+router.get('/:Id', roleMiddleware(['admin', 'teacher']), listStudents);
+router.get('/:Id', roleMiddleware(['admin', 'teacher']), getStudenById);
+router.put('/:Id', roleMiddleware(['admin', 'teacher']), updateStudent);
+router.delete('/:Id', roleMiddleware (['admin']), deleteStudent);
 
-export default categoryRouter;
+module.exports = router;
