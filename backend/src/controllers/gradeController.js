@@ -92,7 +92,7 @@ const listGrades = async (req, res) => {
     if (role === 'student') {
       const student = await getStudentFromUser(userId);
       if (!student) return res.status(404).json({ message: 'Perfil de aluno não encontrado.' });
-      enrollmentWhere.studentId = student.id;
+      enrollmentWhere.student_id = student.id;
 
     } else if (role === 'teacher') {
       gradeWhere.teacherId = userId;
@@ -180,7 +180,7 @@ const getGradeById = async (req, res) => {
     // Aluno só pode ver a própria nota
     if (role === 'student') {
       const student = await getStudentFromUser(userId);
-      if (!student || grade.enrollment.studentId !== student.id) {
+      if (!student || grade.enrollment.student_id !== student.id) {
         return res.status(403).json({ message: 'Acesso negado.' });
       }
     }

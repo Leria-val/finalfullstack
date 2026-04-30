@@ -2,10 +2,21 @@ import express from "express";
 import { classController } from "../controllers/classController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
+import { validateBody, classSchema } from "../middlewares/validation.js";
+
 
 const router = express.Router();
 
-router.get("/", authMiddleware, classController.getAll);
-router.post("/", authMiddleware, roleMiddleware("admin"), classController.create);
+router.get("/", 
+    authMiddleware, 
+    classController.getAll);
+
+
+// Apenas o ADMIN pode criar novas turmas
+router.post("/", 
+  authMiddleware, 
+  roleMiddleware("ADMIN"), // Ajustado para CAIXA ALTA
+  classController.create
+);
 
 export default router;
