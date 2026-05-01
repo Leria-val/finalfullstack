@@ -1,5 +1,5 @@
 // src/pages/Users/index.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Table from "../../components/Table";
 import Modal from "../../components/Modal";
 import Input from "../../components/Input";
@@ -7,6 +7,12 @@ import api from "../../services/api";
 
 const ROLES = ["admin", "teacher", "student"];
 const EMPTY_FORM = { name: "", email: "", password: "", role: "student" };
+
+const ROLE_BADGE = {
+  admin:   { bg: "#fefcbf", color: "#744210" },
+  teacher: { bg: "#bee3f8", color: "#1a365d" },
+  student: { bg: "#c6f6d5", color: "#276749" },
+};
 
 // ─── Formulário ────────────────────────────────────────────────────────────────
 const UserForm = ({ initial = EMPTY_FORM, isEdit = false, onSubmit, onCancel, loading }) => {
@@ -34,48 +40,35 @@ const UserForm = ({ initial = EMPTY_FORM, isEdit = false, onSubmit, onCancel, lo
 
   return (
     <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <Input label="Nome"  name="name"  value={form.name}  onChange={handle} placeholder="Nome completo" required error={errors.name} />
-      <Input label="E-mail" name="email" type="email" value={form.email} onChange={handle} placeholder="email@exemplo.com" required error={errors.email} />
+      <Input label="Nome"   name="name"     value={form.name}     onChange={handle} placeholder="Nome completo" required error={errors.name} />
+      <Input label="E-mail" name="email"    type="email" value={form.email} onChange={handle} placeholder="email@exemplo.com" required error={errors.email} />
       <Input label={isEdit ? "Nova Senha (opcional)" : "Senha"} name="password" type="password" value={form.password} onChange={handle} placeholder="••••••••" required={!isEdit} error={errors.password} />
 
-      {/* Role selector */}
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <label style={labelStyle}>Perfil *</label>
         <div style={{ display: "flex", gap: 8 }}>
           {ROLES.map((r) => (
-            <button
-              key={r} type="button"
-              onClick={() => setForm((p) => ({ ...p, role: r }))}
-              style={{
-                flex: 1, padding: "9px 0", borderRadius: 9, border: "1.5px solid",
-                borderColor: form.role === r ? "#1a365d" : "#e2e8f0",
-                background: form.role === r ? "#1a365d" : "#f7f9fc",
-                color: form.role === r ? "#fff" : "#4a5568",
-                fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
-                cursor: "pointer", textTransform: "capitalize",
-              }}
-            >{r}</button>
+            <button key={r} type="button" onClick={() => setForm((p) => ({ ...p, role: r }))} style={{
+              flex: 1, padding: "9px 0", borderRadius: 9, border: "1.5px solid",
+              borderColor: form.role === r ? "#1a365d" : "#e2e8f0",
+              background: form.role === r ? "#1a365d" : "#f7f9fc",
+              color: form.role === r ? "#fff" : "#4a5568",
+              fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+              cursor: "pointer", textTransform: "capitalize",
+            }}>{r}</button>
           ))}
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
-        <button type="button" onClick={onCancel} style={btnStyle("#f7f9fc", "#4a5568")}>Cancelar</button>
-        <button type="submit" disabled={loading} style={btnStyle("#1a365d", "#fff")}>
-          {loading ? "Salvando..." : "Salvar"}
-        </button>
+        <button type="button" onClick={onCancel} style={btn("#f7f9fc", "#4a5568")}>Cancelar</button>
+        <button type="submit" disabled={loading} style={btn("#1a365d", "#fff")}>{loading ? "Salvando..." : "Salvar"}</button>
       </div>
     </form>
   );
 };
 
 // ─── Página ────────────────────────────────────────────────────────────────────
-const ROLE_BADGE = {
-  admin:   { bg: "#fefcbf", color: "#744210" },
-  teacher: { bg: "#bee3f8", color: "#1a365d" },
-  student: { bg: "#c6f6d5", color: "#276749" },
-};
-
 const Users = () => {
   const [users, setUsers]           = useState([]);
   const [loading, setLoading]       = useState(false);
@@ -87,27 +80,51 @@ const Users = () => {
   const [page, setPage]             = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await api.get("/users", {
-        params: { name: search || undefined, role: roleFilter || undefined, page, limit: 10 },
-      });
-      setUsers(data.users);
-      setTotalPages(data.totalPages);
-    } catch (err) {
-      console.error(err);
-    } finally { setLoading(false); }
-  }, [search, roleFilter, page]);
+  const prevFilters = useRef({ search, roleFilter });
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
-  useEffect(() => { setPage(1); }, [search, roleFilter]);
+  useEffect(() => {
+    let currentPage = page;
+
+    // Se algum filtro mudou, reseta para página 1 sem useEffect separado
+    const filtersChanged =
+      prevFilters.current.search !== search ||
+      prevFilters.current.roleFilter !== roleFilter;
+
+    if (filtersChanged) {
+      prevFilters.current = { search, roleFilter };
+      currentPage = 1;
+      setPage(1);
+    }
+
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const { data } = await api.get("/users", {
+          params: { name: search || undefined, role: roleFilter || undefined, page: currentPage, limit: 10 },
+        });
+        if (!cancelled) {
+          setUsers(data.users);
+          setTotalPages(data.totalPages);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [search, roleFilter, page]);
 
   const handleCreate = async (form) => {
     setSaving(true);
     try {
       await api.post("/users", form);
-      setModal(null); fetchUsers();
+      setModal(null);
+      setPage(1);
     } catch (err) {
       alert(err.response?.data?.message || "Erro ao criar usuário.");
     } finally { setSaving(false); }
@@ -117,7 +134,7 @@ const Users = () => {
     setSaving(true);
     try {
       await api.put(`/users/${selected.id}`, form);
-      setModal(null); fetchUsers();
+      setModal(null);
     } catch (err) {
       alert(err.response?.data?.message || "Erro ao atualizar usuário.");
     } finally { setSaving(false); }
@@ -127,7 +144,8 @@ const Users = () => {
     setSaving(true);
     try {
       await api.delete(`/users/${selected.id}`);
-      setModal(null); fetchUsers();
+      setModal(null);
+      setPage(1);
     } catch (err) {
       alert(err.response?.data?.message || "Erro ao excluir usuário.");
     } finally { setSaving(false); }
@@ -152,16 +170,14 @@ const Users = () => {
 
   return (
     <div style={pageStyle}>
-      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
         <div>
           <h1 style={h1Style}>Usuários</h1>
           <p style={{ margin: 0, color: "#718096", fontSize: 14 }}>Gerencie todos os usuários da plataforma.</p>
         </div>
-        <button onClick={() => setModal("create")} style={btnStyle("#1a365d", "#fff")}>+ Novo Usuário</button>
+        <button onClick={() => setModal("create")} style={btn("#1a365d", "#fff")}>+ Novo Usuário</button>
       </div>
 
-      {/* Filters */}
       <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 200, maxWidth: 340 }}>
           <Input name="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome..." icon="🔍" />
@@ -182,7 +198,8 @@ const Users = () => {
         </div>
       </div>
 
-      <Table columns={columns} data={users} loading={loading}
+      <Table
+        columns={columns} data={users} loading={loading}
         onEdit={(row) => { setSelected(row); setModal("edit"); }}
         onDelete={(row) => { setSelected(row); setModal("delete"); }}
         emptyMessage="Nenhum usuário encontrado."
@@ -191,7 +208,7 @@ const Users = () => {
       {totalPages > 1 && (
         <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 24 }}>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button key={p} onClick={() => setPage(p)} style={{ ...btnStyle(p === page ? "#1a365d" : "#f7f9fc", p === page ? "#fff" : "#4a5568"), padding: "6px 14px", minWidth: 36 }}>{p}</button>
+            <button key={p} onClick={() => setPage(p)} style={{ ...btn(p === page ? "#1a365d" : "#f7f9fc", p === page ? "#fff" : "#4a5568"), padding: "6px 14px", minWidth: 36 }}>{p}</button>
           ))}
         </div>
       )}
@@ -203,10 +220,7 @@ const Users = () => {
       <Modal isOpen={modal === "edit"} onClose={() => setModal(null)} title="Editar Usuário">
         <UserForm
           initial={{ name: selected?.name ?? "", email: selected?.email ?? "", password: "", role: selected?.role ?? "student" }}
-          isEdit
-          onSubmit={handleEdit}
-          onCancel={() => setModal(null)}
-          loading={saving}
+          isEdit onSubmit={handleEdit} onCancel={() => setModal(null)} loading={saving}
         />
       </Modal>
 
@@ -215,10 +229,8 @@ const Users = () => {
           Tem certeza que deseja excluir <strong>{selected?.name}</strong>?
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={() => setModal(null)} style={btnStyle("#f7f9fc", "#4a5568")}>Cancelar</button>
-          <button onClick={handleDelete} disabled={saving} style={btnStyle("#c53030", "#fff")}>
-            {saving ? "Excluindo..." : "Excluir"}
-          </button>
+          <button onClick={() => setModal(null)} style={btn("#f7f9fc", "#4a5568")}>Cancelar</button>
+          <button onClick={handleDelete} disabled={saving} style={btn("#c53030", "#fff")}>{saving ? "Excluindo..." : "Excluir"}</button>
         </div>
       </Modal>
     </div>
@@ -228,6 +240,6 @@ const Users = () => {
 const pageStyle  = { padding: "32px 40px", fontFamily: "'DM Sans', sans-serif", maxWidth: 1100, margin: "0 auto" };
 const h1Style    = { margin: 0, fontSize: 26, fontWeight: 800, color: "#1a365d", letterSpacing: "-0.02em" };
 const labelStyle = { fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#2d3748", letterSpacing: "0.02em", textTransform: "uppercase" };
-const btnStyle   = (bg, color) => ({ background: bg, color, border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" });
+const btn = (bg, color) => ({ background: bg, color, border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" });
 
 export default Users;
