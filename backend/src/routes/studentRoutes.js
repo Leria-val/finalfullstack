@@ -1,22 +1,34 @@
-const { Router } = require('express');
-const {
-  createStudent,
-  listStudents,
-  getStudenById,
-  updateStudent,
-  deleteStudent,
-} = require('../controllers/studentController');
-
-const authMiddleware = require('../middlewares/authMiddleware');
-const roleMiddleware = require('../middlewares/roleMiddleware');
+import { Router } from 'express';
+import { studentController } from '../controllers/studentController.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { roleMiddleware } from '../middlewares/roleMiddleware.js';
 
 const router = Router();
-
 router.use(authMiddleware);
-router.post('/', roleMiddleware(['admin']), createStudent);
-router.get('/:Id', roleMiddleware(['admin', 'teacher']), listStudents);
-router.get('/:Id', roleMiddleware(['admin', 'teacher']), getStudenById);
-router.put('/:Id', roleMiddleware(['admin', 'teacher']), updateStudent);
-router.delete('/:Id', roleMiddleware (['admin']), deleteStudent);
 
-module.exports = router;
+router.post('/', 
+  roleMiddleware('ADMIN'), 
+  studentController.create
+);
+
+router.get('/', 
+  roleMiddleware(['ADMIN', 'TEACHER']), 
+  studentController.getAll
+);
+
+router.get('/:id', 
+  roleMiddleware(['ADMIN', 'TEACHER']), 
+  studentController.getById
+);
+
+router.put('/:id', 
+  roleMiddleware('ADMIN'), 
+  studentController.update
+);
+
+router.delete('/:id', 
+  roleMiddleware('ADMIN'), 
+  studentController.delete
+);
+
+export default router;

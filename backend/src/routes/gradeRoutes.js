@@ -1,19 +1,21 @@
-const { Router } = require('express');
-const {
-    createGrade,
-    listGrades,
-    getGradeById,
-    updateGrade,
-    deleteGrade,
-} = require('../controllers/gradeController');
-const authMiddleware = require('../middlewares/authMiddleware');
+import { Router } from 'express';
+import { gradeController } from '../controllers/gradeController.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { roleMiddleware } from '../middlewares/roleMiddleware.js';
+
 const router = Router();
 
-router.use(authMiddleware)
-router.post('/', createGrade);
-router.get('/', listGrades);
-router.get('/:id', getGradeById);
-router.put('/:id', updateGrade);
-router.delete('/:id', deleteGrade);
+// Todas as rotas de nota exigem login
+router.use(authMiddleware);
 
-module.exports = router;
+// Professor: Pode lançar e atualizar notas
+router.post('/', roleMiddleware('TEACHER'), gradeController.launch);
+router.put('/:id', roleMiddleware('TEACHER'), gradeController.update);
+
+// Aluno: Pode ver suas próprias notas | Admin/Teacher: Podem ver todas
+router.get('/my-grades', gradeController.getStudentGrades); 
+
+// Geral: Buscar uma nota específica por ID
+router.get('/:id', gradeController.getById);
+
+export default router;

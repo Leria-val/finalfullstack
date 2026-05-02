@@ -2,7 +2,7 @@ import express from "express";
 import { classController } from "../controllers/classController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { roleMiddleware } from "../middlewares/roleMiddleware.js";
-import { validateBody, classSchema } from "../middlewares/validation.js";
+import { validateBody, classSchema } from "../validations/validation.js";
 
 
 const router = express.Router();

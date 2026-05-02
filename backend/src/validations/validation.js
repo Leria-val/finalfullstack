@@ -16,7 +16,7 @@ export const enrollSchema = Joi.object({
   class_id: Joi.string().guid({ version: 'uuidv4' }).required()
 });
 
-// Bônus: Validação de Notas (Grade)
+// validação de Notas (Grade)
 export const gradeSchema = Joi.object({
   enrollment_id: Joi.string().guid({ version: 'uuidv4' }).required(),
   value: Joi.number().min(0).max(10).required().messages({
