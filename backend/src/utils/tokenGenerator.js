@@ -1,23 +1,34 @@
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import 'dotenv/config';
 
-const JWT_SECRET = process.env.JWT_SECRET
-const JWT_EXPIRES_IN = process.env,JWT_EXPIRES_IN
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
 
 if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET nao definido no .env');
+  
+  console.error("❌ ERRO: JWT_SECRET não foi encontrado no arquivo .env");
+  process.exit(1); 
 }
 
-const generatorToken = ({ id, name, role }) => {
-    return jwt.sign({ id, name, role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+// Gerar Token de Acesso (Login)
+export const generateToken = (payload) => {
+  // payload geralmente contém { id, role }
+  return jwt.sign(payload, JWT_SECRET, { 
+    expiresIn: JWT_EXPIRES_IN 
+  });
 };
 
-const verifyToken = (token) => {
+// Verificar validade do Token
+export const verifyToken = (token) => {
+  try {
     return jwt.verify(token, JWT_SECRET);
+  } catch (error) {
+    return null;
+  }
 };
 
-const generatorRandomToken = (bytes = 32) => {
-    return crypto.randomBytes(bytes).toString('hex');
+// Gerar Token aleatório (para recuperação de senha, etc)
+export const generateRandomToken = (bytes = 32) => {
+  return crypto.randomBytes(bytes).toString('hex');
 };
-
-module.export = { generatorToken, verifyToken, generatorRandomToken};

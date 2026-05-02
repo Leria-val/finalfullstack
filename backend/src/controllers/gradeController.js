@@ -1,4 +1,3 @@
-// src/controllers/gradeController.js
 import { Op } from "sequelize";
 import Grade from "../models/Grade.js";
 import Enrollment from "../models/Enrollment.js";

@@ -1,38 +1,42 @@
-// src/controllers/studentController.js
 import { Op } from "sequelize";
 import Student from "../models/Student.js";
 import User from "../models/User.js";
 import { formatStudentResponse } from "../utils/dataFormatter.js";
 
-const studentController = {
+export const studentController = {
 
-  createStudent: async (req, res) => {
+  create: async (req, res) => {
     try {
-      const { userId, enrollment, course, birthDate, phone } = req.body;
+      const { user_id, registration_number, course, birthDate, phone } = req.body;
 
-      if (!userId || !enrollment || !course) {
+      if (!user_id || !registration_number || !course) {
         return res.status(400).json({ error: "userId, matrícula e curso são obrigatórios." });
       }
 
-      const user = await User.findOne({ where: { id: userId, role: "STUDENT" } });
+      const user = await User.findOne({ where: { id: user_id, role: "STUDENT" } });
       if (!user) {
         return res.status(404).json({ error: "Usuário não encontrado ou sem role de aluno." });
       }
 
-      const alreadyExists = await Student.findOne({ where: { userId } });
+      const alreadyExists = await Student.findOne({ where: { user_id } });
       if (alreadyExists) {
         return res.status(409).json({ error: "Este usuário já possui um perfil de aluno." });
       }
 
-      const enrollmentTaken = await Student.findOne({ where: { enrollment } });
+      const enrollmentTaken = await Student.findOne({ where: { registration_number } });
       if (enrollmentTaken) {
         return res.status(409).json({ error: "Matrícula já cadastrada." });
       }
 
-      const student = await Student.create({ userId, enrollment, course, birthDate, phone });
+      const student = await Student.create({ 
+        user_id, 
+        registration_number, 
+        course, 
+        birthDate, 
+        phone });
 
       const full = await Student.findByPk(student.id, {
-        include: [{ model: User, as: "user", attributes: ["id", "name", "email"] }],
+        include: [{ model: User, as: "authInfo", attributes: ["id", "name", "email"] }],
       });
 
       return res.status(201).json({
@@ -44,11 +48,11 @@ const studentController = {
     }
   },
 
-  listStudents: async (req, res) => {
+  getAll: async (req, res) => {
     try {
       const {
         name,
-        enrollment,
+        registration_number,
         course,
         page = 1,
         limit = 10,
@@ -57,15 +61,15 @@ const studentController = {
       } = req.query;
 
       const studentWhere = {};
-      if (enrollment) studentWhere.enrollment = { [Op.iLike]: `%${enrollment}%` };
+      if (registration_number) studentWhere.registration_number = { [Op.iLike]: `%${registration_number}%` };
       if (course)     studentWhere.course     = { [Op.iLike]: `%${course}%` };
 
       const userWhere = {};
       if (name) userWhere.name = { [Op.iLike]: `%${name}%` };
 
       const sortableFields = {
-        name:       [{ model: User, as: "user" }, "name"],
-        enrollment: "enrollment",
+        name:       [{ model: User, as: "authInfo" }, "name"],
+        registration_number: "registration_number,",
         course:     "course",
         createdAt:  "createdAt",
       };
@@ -78,7 +82,7 @@ const studentController = {
         where: studentWhere,
         include: [{
           model: User,
-          as: "user",
+          as: "authInfo",
           attributes: ["id", "name", "email"],
           where: Object.keys(userWhere).length ? userWhere : undefined,
           required: Object.keys(userWhere).length > 0,
@@ -100,10 +104,10 @@ const studentController = {
     }
   },
 
-  getStudentById: async (req, res) => {
+  getById: async (req, res) => {
     try {
       const student = await Student.findByPk(req.params.id, {
-        include: [{ model: User, as: "user", attributes: ["id", "name", "email", "role"] }],
+        include: [{ model: User, as: "authInfo", attributes: ["id", "name", "email", "role"] }],
       });
 
       if (!student) {
@@ -116,23 +120,23 @@ const studentController = {
     }
   },
 
-  updateStudent: async (req, res) => {
+  update: async (req, res) => {
     try {
       const student = await Student.findByPk(req.params.id);
       if (!student) {
         return res.status(404).json({ error: "Aluno não encontrado." });
       }
 
-      const { enrollment, course, birthDate, phone } = req.body;
+      const { registration_number, course, birthDate, phone } = req.body;
 
-      if (enrollment && enrollment !== student.enrollment) {
-        const conflict = await Student.findOne({ where: { enrollment } });
+      if (registration_number && registration_number !== student.registration_number) {
+        const conflict = await Student.findOne({ where: { registration_number, } });
         if (conflict) {
           return res.status(409).json({ error: "Matrícula já em uso." });
         }
       }
 
-      await student.update({ enrollment, course, birthDate, phone });
+      await student.update({ registration_number, course, birthDate, phone });
 
       const updated = await Student.findByPk(student.id, {
         include: [{ model: User, as: "user", attributes: ["id", "name", "email"] }],
@@ -147,7 +151,7 @@ const studentController = {
     }
   },
 
-  deleteStudent: async (req, res) => {
+  delete: async (req, res) => {
     try {
       const student = await Student.findByPk(req.params.id);
       if (!student) {

@@ -1,81 +1,51 @@
-const { format } = require("sequelize/lib/utils");
+export const formatDate = (date) => 
+  date ? new Date(date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : null;
 
-const formatStudentResponse = (student) => {
-    const s = student.toJSON ? student.toJSON() : { ...student };
-    return {
-        id: s.id,
-        userId: s.userId,
-        name: s.user?.name ?? null,
-        email: s.user?.name ?? null,
-        enrollment: s.enrollment,
-        course: s.course,
-        birtDate: s.birtDate ? formatDate(s.birtDate) : null,
-        phone: s.phone ?? null,
-        createdAt: formatDateTime(s.createdAt),
-        updateAt: formatDateTime(s.update),
-    };
+export const formatDateTime = (date) => {
+  if (!date) return null;
+  return new Date(date).toLocaleString('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  });
 };
 
-const formatGradeResponse = (grade) => {
-    const g = grade.toJSON ? grade.toJSON() : { ...grade };
-    const enrollment = g.enrollment ?? {};
-    const student = enrollment.student ?? {};
-    const klass = enrollment.class ?? {};
+export const formatGradeValue = (value) => 
+  value !== undefined ? parseFloat(value).toFixed(2).replace('.', ',') : "0,00";
 
-    return {
-        id: g.id,
-        enrollmentId: g.enrollmentId,
-        teacherId: g.teacherId,
-
-        student: student.id
-          ? {
-             id: student.id,
-             name: student.user?.name ?? null,
-             enrollment: student.enrollment ?? null,
-            }
-        :   undefined,
-
-        class: klass.id
-          ? { id: klass.id, name: klass.name, subject: klass.subject }
-          : undefined,
-
-        value: parseFloat(g.value),
-        formattedValue: formatGradeValue(g.value),
-        status: gradeStatus(g.value),
-
-        period: g.period,
-        description: g.description ?? null,
-        createdAt: formatDateTime(g.createdAt),
-        updatedAt: formatDateTime(g.updateAt),
-    };
+export const gradeStatus = (value) => {
+  const v = parseFloat(value);
+  if (v >= 7) return 'APROVADO';
+  if (v >= 5) return 'RECUPERACAO';
+  return 'REPROVADO';
 };
 
-const formatDate = (date) =>
-    new Date(date).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 
-const formatDateTime = (date) => {
-    if (!date) return null;
-    return new Date(date). toLocaleDateString('pt-BR', {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    });
+
+export const formatStudentResponse = (student) => {
+  // O Sequelize usa objetos complexos, o toJSON() limpa para um objeto JS simples
+  const s = student.toJSON ? student.toJSON() : { ...student };
+  
+  return {
+    id: s.id,
+    user_id: s.user_id,
+    name: s.authInfo?.name ?? null, 
+    email: s.authInfo?.email ?? null,
+    registration_number: s.registration_number,
+    created_at: formatDateTime(s.created_at),
+    updated_at: formatDateTime(s.updated_at),
+  };
 };
 
-const formatGradeValue = (value) =>
-    parseFloat(value). toFixed(2).replace('.', ',');
-
-const gradeStatus = (value) => {
-    const v = parseFloat(value);
-    if (v >= 7) return 'Aprovado';
-    if (v >= 5) return 'Recuperacao';
-    return 'Reprovado';
-};
-
-module.exports = {
-    formatStudentResponse,
-    formatGradeResponse,
-    formatDate,
-    formatDateTime,
-    formatGradeValue,
-    gradeStatus,
+export const formatGradeResponse = (grade) => {
+  const g = grade.toJSON ? grade.toJSON() : { ...grade };
+  
+  return {
+    id: g.id,
+    value: parseFloat(g.value),
+    formatted_value: formatGradeValue(g.value),
+    status: gradeStatus(g.value),
+    student: g.enrollment?.student?.authInfo?.name ?? "N/A",
+    class: g.enrollment?.class?.name ?? "N/A",
+    created_at: formatDateTime(g.created_at)
+  };
 };
