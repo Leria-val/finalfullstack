@@ -4,7 +4,7 @@ import Modal from "../components/Modal.jsx";
 import Input from "../components/Input.jsx";
 import api from "../services/api.js";
 
-const EMPTY_FORM = { name: "", subject: "", teacherId: "" };
+const EMPTY_FORM = { name: "", subject: "", teacher_id: "" };
 
 /* ── ClassForm ─────────────────────────────────────────────────── */
 const ClassForm = ({ initial = EMPTY_FORM, teachers, onSubmit, onCancel, loading }) => {
@@ -17,7 +17,7 @@ const ClassForm = ({ initial = EMPTY_FORM, teachers, onSubmit, onCancel, loading
     const errs = {};
     if (!form.name.trim())    errs.name      = "Nome obrigatório.";
     if (!form.subject.trim()) errs.subject   = "Matéria obrigatória.";
-    if (!form.teacherId)      errs.teacherId = "Selecione um professor.";
+    if (!form.teacher_id)      errs.teacher_id = "Selecione um professor.";
     return errs;
   };
 
@@ -46,17 +46,17 @@ const ClassForm = ({ initial = EMPTY_FORM, teachers, onSubmit, onCancel, loading
           Professor <span className="required-star" aria-hidden="true">*</span>
         </label>
         <select
-          value={form.teacherId}
-          onChange={(e) => setForm((p) => ({ ...p, teacherId: e.target.value }))}
-          className={`form-select${errors.teacherId ? " has-error" : ""}`}
+          value={form.teacher_id}
+          onChange={(e) => setForm((p) => ({ ...p, teacher_id: e.target.value }))}
+          className={`form-select${errors.teacher_id ? " has-error" : ""}`}
         >
           <option value="">Selecione um professor...</option>
           {teachers.map((t) => (
             <option key={t.id} value={t.id}>{t.name}</option>
           ))}
         </select>
-        {errors.teacherId && (
-          <span className="form-error" role="alert">{errors.teacherId}</span>
+        {errors.teacher_id && (
+          <span className="form-error" role="alert">{errors.teacher_id}</span>
         )}
       </div>
 
@@ -211,7 +211,7 @@ const Classes = () => {
 
       <Modal isOpen={modal === "edit"} onClose={() => setModal(null)} title="Editar Turma">
         <ClassForm
-          initial={{ name: selected?.name ?? "", subject: selected?.subject ?? "", teacherId: selected?.teacherId ?? "" }}
+          initial={{ name: selected?.name ?? "", subject: selected?.subject ?? "", teacher_id: selected?.teacher_id ?? "" }}
           teachers={teachers} onSubmit={handleEdit} onCancel={() => setModal(null)} loading={saving}
         />
       </Modal>
