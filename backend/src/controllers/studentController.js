@@ -68,60 +68,80 @@ export const studentController = {
   },
 
   getAll: async (req, res) => {
-    try {
-      const {
-        name,
-        registration_number,
-        instrument,
-        page = 1,
-        limit = 10,
-        orderBy = "name",
-        order = "ASC",
-      } = req.query;
+  try {
+    const {
+      name,
+      registration_number,
+      instrument,
+      page = 1,
+      limit = 10,
+      orderBy = "name",
+      order = "ASC",
+    } = req.query;
 
-      const studentWhere = {};
-      if (registration_number) studentWhere.registration_number = { [Op.iLike]: `%${registration_number}%` };
-      if (instrument) studentWhere.instrument = { [Op.iLike]: `%${instrument}%` };
-
-      const userWhere = {};
-      if (name) userWhere.name = { [Op.iLike]: `%${name}%` };
-
-      const sortableFields = {
-        name: [{ model: User, as: "authInfo" }, "name"],
-        registration_number: "registration_number",
-        instrument: "instrument",
-        createdAt: "createdAt",
-      };
-      
-      const sortField = sortableFields[orderBy] || [{ model: User, as: "authInfo" }, "name"];
-      const sortDir = ["ASC", "DESC"].includes(order.toUpperCase()) ? order.toUpperCase() : "ASC";
-      const offset = (parseInt(page) - 1) * parseInt(limit);
-
-      const { rows: students, count: total } = await Student.findAndCountAll({
-        where: studentWhere,
-        include: [{
-          model: User,
-          as: "authInfo",
-          attributes: ["id", "name", "email"],
-          where: Object.keys(userWhere).length ? userWhere : undefined,
-          required: Object.keys(userWhere).length > 0,
-        }],
-        order: [Array.isArray(sortField) ? [...sortField, sortDir] : [sortField, sortDir]],
-        limit: parseInt(limit),
-        offset,
-        distinct: true,
-      });
-
-      return res.status(200).json({
-        total,
-        page: parseInt(page),
-        totalPages: Math.ceil(total / parseInt(limit)),
-        students: students.map(formatStudentResponse),
-      });
-    } catch (error) {
-      res.status(500).json({ error: "Erro ao listar alunos: " + error.message });
+    const studentWhere = {};
+    if (registration_number) {
+      studentWhere.registration_number = { [Op.iLike]: `%${registration_number}%` };
     }
-  },
+    if (instrument) {
+      studentWhere.instrument = { [Op.iLike]: `%${instrument}%` };
+    }
+
+    const userWhere = {};
+    if (name) {
+      userWhere.name = { [Op.iLike]: `%${name}%` };
+    }
+
+    const sortableFields = {
+      name: [{ model: User, as: "authInfo" }, "name"],
+      registration_number: "registration_number",
+      instrument: "instrument",
+      createdAt: "createdAt",
+    };
+
+    const sortField = sortableFields[orderBy] || [{ model: User, as: "authInfo" }, "name"];
+    const sortDir = ["ASC", "DESC"].includes(order.toUpperCase()) ? order.toUpperCase() : "ASC";
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    
+    const { rows: students, count: total } = await Student.findAndCountAll({
+      where: studentWhere,
+      include: [{
+        model: User,
+        as: "authInfo",
+        attributes: ["id", "name", "email"],
+        where: Object.keys(userWhere).length ? userWhere : undefined,
+        required: Object.keys(userWhere).length > 0, // Inner join si hay búsqueda, left join si no
+      }],
+      order: [Array.isArray(sortField) ? [...sortField, sortDir] : [sortField, sortDir]],
+      limit: parseInt(limit),
+      offset,
+      distinct: true, 
+    });
+
+    const formattedStudents = students.map(s => ({
+      id: s.id,
+      registration_number: s.registration_number,
+      instrument: s.instrument,
+      musical_level: s.musical_level,
+      status: s.status,
+      name: s.authInfo?.name, 
+      email: s.authInfo?.email,
+      userId: s.user_id,
+      createdAt: s.createdAt
+    }));
+
+    return res.status(200).json({
+      total, 
+      page: parseInt(page),
+      totalPages: Math.ceil(total / parseInt(limit)),
+      students: formattedStudents, 
+    });
+  } catch (error) {
+    console.error("Detalle del error:", error);
+    res.status(500).json({ error: "Erro ao listar alunos: " + error.message });
+  }
+},
 
   getById: async (req, res) => {
     try {

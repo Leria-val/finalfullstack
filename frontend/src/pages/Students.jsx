@@ -4,7 +4,14 @@ import Modal from "../components/Modal.jsx";
 import Input from "../components/Input.jsx";
 import api from "../services/api.js";
 
-const EMPTY_FORM = { userId: "", enrollment: "", course: "", birthDate: "", phone: "" };
+const EMPTY_FORM = { 
+  user_Id: "", 
+  registration_number: "", 
+  musical_level: "", 
+  birth_date: "", 
+  phone: "",
+  instrument: ""
+};
 
 /* ── StudentForm ───────────────────────────────────────────────── */
 const StudentForm = ({ initial = EMPTY_FORM, onSubmit, onCancel, loading }) => {
@@ -16,8 +23,8 @@ const StudentForm = ({ initial = EMPTY_FORM, onSubmit, onCancel, loading }) => {
 
   const validate = () => {
     const errs = {};
-    if (!form.enrollment.trim()) errs.enrollment = "Matrícula obrigatória.";
-    if (!form.course.trim())     errs.course     = "Curso obrigatório.";
+    if (!form.registration_number.trim()) errs.registration_number = "Matrícula obrigatória.";
+    if (!form.musical_level.trim())     errs.musical_level     = "Curso obrigatório.";
     return errs;
   };
 
@@ -31,23 +38,27 @@ const StudentForm = ({ initial = EMPTY_FORM, onSubmit, onCancel, loading }) => {
   return (
     <form onSubmit={submit} className="form-col" noValidate>
       <Input
-        label="ID do Usuário" name="userId" value={form.userId}
+        label="ID do Usuário" name="user_Id" value={form.user_Id}
         onChange={handle} placeholder="UUID do User vinculado"
-        required error={errors.userId}
+        required error={errors.user_Id}
       />
       <Input
-        label="Matrícula" name="enrollment" value={form.enrollment}
+        label="Matrícula" name="registration_number" value={form.registration_number}
         onChange={handle} placeholder="Ex: 2024001"
-        required error={errors.enrollment}
+        required error={errors.registration_number}
       />
       <Input
-        label="Curso" name="course" value={form.course}
+        label="Curso" name="musical_level" value={form.musical_level}
         onChange={handle} placeholder="Ex: Piano, Violão..."
-        required error={errors.course}
+        required error={errors.musical_level}
       />
       <Input
-        label="Data de Nascimento" name="birthDate" type="date"
-        value={form.birthDate} onChange={handle}
+        label="Instrumento" name="instrument" value={form.instrument}
+        onChange={handle} placeholder="Ex: Piano, Violino..."
+      />
+      <Input
+        label="Data de Nascimento" name="birth_date" type="date"
+        value={form.birth_date} onChange={handle}
       />
       <Input
         label="Telefone" name="phone" value={form.phone}
@@ -143,8 +154,8 @@ const Students = () => {
   const columns = [
     { key: "name",       label: "Nome"      },
     { key: "email",      label: "E-mail"    },
-    { key: "enrollment", label: "Matrícula" },
-    { key: "course",     label: "Curso"     },
+    { key: "registration_number", label: "Matrícula" },
+    { key: "musical_level",     label: "Curso"     },
     {
       key: "status",
       label: "Status",
@@ -216,10 +227,10 @@ const Students = () => {
       <Modal isOpen={modal === "edit"} onClose={() => setModal(null)} title="Editar Aluno">
         <StudentForm
           initial={{
-            userId:     selected?.userId     ?? "",
-            enrollment: selected?.enrollment ?? "",
-            course:     selected?.course     ?? "",
-            birthDate:  selected?.birthDate  ?? "",
+            user_Id:     selected?.user_Id     ?? "",
+            registration_number: selected?.registration_number ?? "",
+            musical_level:     selected?.musical_level     ?? "",
+            birth_date:  selected?.birth_date  ?? "",
             phone:      selected?.phone      ?? "",
           }}
           onSubmit={handleEdit}

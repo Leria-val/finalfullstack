@@ -48,6 +48,7 @@ phone: {
   
 
 }, { 
+  sequelize,
   tableName: 'students',
   underscored: true,
   timestamps: true
