@@ -4,7 +4,7 @@ import User from "./User.js";
 
 const Class = sequelize.define("Class", {
   id: {
-    type: DataTypes.STRING,
+    type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
 

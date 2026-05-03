@@ -9,7 +9,7 @@ const Student = sequelize.define("Student", {
     primaryKey: true,
   },
   user_id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.UUID,
     allowNull: false,
     references: {
       model: 'users',
@@ -29,8 +29,24 @@ const Student = sequelize.define("Student", {
   musical_level: {
     type: DataTypes.STRING, //Iniciante, intermediario, avanzado
     allowNull: true
+  },
+  
+   instrument: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+
+  birth_date: {
+    type: DataTypes.DATEONLY,
+    allowNull: false
+  },
+  
+phone: {
+    type: DataTypes.STRING,
+    allowNull: false
   }
   
+
 }, { 
   tableName: 'students',
   underscored: true,

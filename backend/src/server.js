@@ -7,7 +7,7 @@ import classRoutes from "./routes/classRoutes.js";
 import enrollRoutes from "./routes/enrollRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import gradeRoutes from "./routes/gradeRoutes.js";
-//import userRoutes from "./routes/userRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,7 +26,7 @@ app.use('/api/students', studentRoutes); // Cadastro de perfil de aluno
 app.use('/api/classes', classRoutes);     // Gestão de turmas
 app.use('/api/enroll', enrollRoutes);     // Matrículas (vínculo aluno-turma)
 app.use('/api/grades', gradeRoutes);     // Lançamento de notas
-// app.use('/api/users', userRoutes);
+app.use('/api/users', userRoutes);
 
 app.get('/health', (req, res) => res.status(200).json({ 
   status: 'OK', 

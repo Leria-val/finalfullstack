@@ -7,7 +7,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
 
 if (!JWT_SECRET) {
   
-  console.error("❌ ERRO: JWT_SECRET não foi encontrado no arquivo .env");
+  console.error("ERRO: JWT_SECRET não foi encontrado no arquivo .env");
   process.exit(1); 
 }
 
