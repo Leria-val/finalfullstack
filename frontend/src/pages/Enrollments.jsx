@@ -1,4 +1,3 @@
-// src/pages/Enrollments/index.jsx
 import { useState, useEffect, useRef } from "react";
 import Table from "../../components/Table";
 import Modal from "../../components/Modal";

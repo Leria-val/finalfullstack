@@ -12,7 +12,7 @@ const Student = sequelize.define("Student", {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: User,
+      model: 'users',
       key: 'id'
     },
     onDelete: 'CASCADE' //se deletar user deleta student
@@ -21,7 +21,6 @@ const Student = sequelize.define("Student", {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
-    comment: 'Nmro de Matrícula gerado automaticamente ou manual'
   },
   status: {
     type: DataTypes.ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED'), //Iniciante, intermediario, avanzado
@@ -31,14 +30,15 @@ const Student = sequelize.define("Student", {
     type: DataTypes.STRING, //Iniciante, intermediario, avanzado
     allowNull: true
   }
-},  
-
-{ underscored: true,
-  timestamps: false 
+  
+}, { 
+  tableName: 'students',
+  underscored: true,
+  timestamps: true
 });
 
 //relacionamentos
-Student.belongTo(User, { foreignKey: 'user_id', as: 'authInfo' });
+Student.belongsTo(User, { foreignKey: 'user_id', as: 'authInfo' });
 User.hasOne(Student, {foreignKey:'user_id', as: 'studentProfile' });
 
 export default Student; 

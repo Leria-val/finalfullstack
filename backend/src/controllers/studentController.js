@@ -139,7 +139,7 @@ export const studentController = {
       await student.update({ registration_number, course, birthDate, phone });
 
       const updated = await Student.findByPk(student.id, {
-        include: [{ model: User, as: "user", attributes: ["id", "name", "email"] }],
+        include: [{ model: User, as: "authInfo", attributes: ["id", "name", "email"] }],
       });
 
       return res.status(200).json({

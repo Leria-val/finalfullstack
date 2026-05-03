@@ -1,5 +1,5 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/connection');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/connection.js';
 
 const Grade = sequelize.define(
   'Grade',
@@ -9,13 +9,13 @@ const Grade = sequelize.define(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    enrollmentId: {
+    enrollment_id: {
       type: DataTypes.UUID,
       allowNull: false,
       references: { model: 'enrollments', key: 'id' },
       onDelete: 'CASCADE',
     },
-    teacherId: {
+    teacher_id: {
       type: DataTypes.UUID,
       allowNull: false,
       references: { model: 'users', key: 'id' },
@@ -40,20 +40,21 @@ const Grade = sequelize.define(
   },
   {
     tableName: 'grades',
+    underscored: true,
     timestamps: true,
   }
 );
 
 Grade.associate = (models) => {
   Grade.belongsTo(models.Enrollment, {
-    foreignKey: 'enrollmentId',
+    foreignKey: 'enrollment_id',
     as: 'enrollment',
   });
 
   Grade.belongsTo(models.User, {
-    foreignKey: 'teacherId',
+    foreignKey: 'teacher_id',
     as: 'teacher',
   });
 };
 
-module.exports = Grade;
+export default Grade;

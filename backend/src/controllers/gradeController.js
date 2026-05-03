@@ -6,34 +6,34 @@ import Class from "../models/Class.js";
 import User from "../models/User.js";
 import { formatGradeResponse } from "../utils/dataFormatter.js";
 
-const getStudentFromUser = async (userId) => {
-  return Student.findOne({ where: { userId } });
+const getStudentFromUser = async (user_id) => {
+  return Student.findOne({ where: { user_id } });
 };
 
-const gradeController = {
+export const gradeController = {
 
-  createGrade: async (req, res) => {
+  create: async (req, res) => {
     try {
-      const { role, id: teacherId } = req.user;
+      const { role, id: teacher_id } = req.user;
 
       if (role !== "TEACHER" && role !== "ADMIN") {
         return res.status(403).json({ error: "Apenas professores podem lançar notas." });
       }
 
-      const { enrollmentId, value, period, description } = req.body;
+      const { enrollment_id, value, period, description } = req.body;
 
-      if (!enrollmentId || value === undefined || !period) {
-        return res.status(400).json({ error: "enrollmentId, value e period são obrigatórios." });
+      if (!enrollment_id || value === undefined || !period) {
+        return res.status(400).json({ error: "enrollment_id, value e period são obrigatórios." });
       }
 
-      const enrollment = await Enrollment.findByPk(enrollmentId, {
+      const enrollment = await Enrollment.findByPk(enrollment_id, {
         include: [{ model: Class, as: "class" }],
       });
       if (!enrollment) {
         return res.status(404).json({ error: "Matrícula não encontrada." });
       }
 
-      if (role === "TEACHER" && enrollment.class.teacherId !== teacherId) {
+      if (role === "TEACHER" && enrollment.class.teacher_id !== teacher_id) {
         return res.status(403).json({ error: "Você não leciona nesta turma." });
       }
 
@@ -41,7 +41,13 @@ const gradeController = {
         return res.status(400).json({ error: "Nota deve ser entre 0 e 10." });
       }
 
-      const grade = await Grade.create({ enrollmentId, teacherId, value, period, description });
+      const grade = await Grade.create({ 
+        enrollment_id, 
+        teacher_id, 
+        value, 
+        period, 
+        description 
+      });
 
       const full = await Grade.findByPk(grade.id, {
         include: [{
@@ -51,7 +57,7 @@ const gradeController = {
             {
               model: Student,
               as: "student",
-              include: [{ model: User, as: "user", attributes: ["name", "email"] }],
+              include: [{ model: User, as: "authInfo", attributes: ["name", "email"] }],
             },
             { model: Class, as: "class", attributes: ["id", "name", "subject"] },
           ],
@@ -67,9 +73,9 @@ const gradeController = {
     }
   },
 
-  listGrades: async (req, res) => {
+  getAll: async (req, res) => {
     try {
-      const { role, id: userId } = req.user;
+      const { role, id: user_id } = req.user;
       const {
         studentName,
         subject,
@@ -98,13 +104,13 @@ const gradeController = {
       }
 
       if (role === "STUDENT") {
-        const student = await getStudentFromUser(userId);
+        const student = await getStudentFromUser(user_id);
         if (!student) {
           return res.status(404).json({ error: "Perfil de aluno não encontrado." });
         }
-        enrollmentWhere.studentId = student.id;
+        enrollmentWhere.student_id = student.id;
       } else if (role === "TEACHER") {
-        gradeWhere.teacherId = userId;
+        gradeWhere.teacher_id = user_id;
       }
 
       const allowedOrderFields = ["value", "period", "createdAt"];
@@ -126,7 +132,7 @@ const gradeController = {
               as: "student",
               include: [{
                 model: User,
-                as: "user",
+                as: "authInfo",
                 attributes: ["id", "name", "email"],
                 where: Object.keys(userWhere).length ? userWhere : undefined,
                 required: Object.keys(userWhere).length > 0,
@@ -158,9 +164,9 @@ const gradeController = {
     }
   },
 
-  getGradeById: async (req, res) => {
+  getById: async (req, res) => {
     try {
-      const { role, id: userId } = req.user;
+      const { role, id: user_id } = req.user;
 
       const grade = await Grade.findByPk(req.params.id, {
         include: [{
@@ -170,7 +176,7 @@ const gradeController = {
             {
               model: Student,
               as: "student",
-              include: [{ model: User, as: "user", attributes: ["name", "email"] }],
+              include: [{ model: User, as: "authInfo", attributes: ["name", "email"] }],
             },
             { model: Class, as: "class", attributes: ["id", "name", "subject"] },
           ],
@@ -182,8 +188,8 @@ const gradeController = {
       }
 
       if (role === "STUDENT") {
-        const student = await getStudentFromUser(userId);
-        if (!student || grade.enrollment.studentId !== student.id) {
+        const student = await getStudentFromUser(user_id);
+        if (!student || grade.enrollment.student_id !== student.id) {
           return res.status(403).json({ error: "Acesso negado." });
         }
       }
@@ -194,9 +200,9 @@ const gradeController = {
     }
   },
 
-  updateGrade: async (req, res) => {
+  update: async (req, res) => {
     try {
-      const { role, id: userId } = req.user;
+      const { role, id: user_id } = req.user;
 
       if (role !== "TEACHER" && role !== "ADMIN") {
         return res.status(403).json({ error: "Apenas professores podem editar notas." });
@@ -207,7 +213,7 @@ const gradeController = {
         return res.status(404).json({ error: "Nota não encontrada." });
       }
 
-      if (role === "TEACHER" && grade.teacherId !== userId) {
+      if (role === "TEACHER" && grade.teacher_id !== user_id) {
         return res.status(403).json({ error: "Você não pode editar notas de outro professor." });
       }
 
@@ -228,9 +234,9 @@ const gradeController = {
     }
   },
 
-  deleteGrade: async (req, res) => {
+  delete: async (req, res) => {
     try {
-      const { role, id: userId } = req.user;
+      const { role, id: user_id } = req.user;
 
       if (role !== "TEACHER" && role !== "ADMIN") {
         return res.status(403).json({ error: "Apenas professores podem remover notas." });
@@ -241,7 +247,7 @@ const gradeController = {
         return res.status(404).json({ error: "Nota não encontrada." });
       }
 
-      if (role === "TEACHER" && grade.teacherId !== userId) {
+      if (role === "TEACHER" && grade.teacher_id !== user_id) {
         return res.status(403).json({ error: "Você não pode remover notas de outro professor." });
       }
 
