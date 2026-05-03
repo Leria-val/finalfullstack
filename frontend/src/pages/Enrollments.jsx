@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import Table from "../components/Table";
-import Modal from "../components/Modal";
-import api from "../services/api";
+import Table from "../components/Table.jsx";
+import Modal from "../components/Modal.jsx";
+import api from "../services/api.js";
 
-// ─── Formulário de matrícula ───────────────────────────────────────────────────
 const EnrollForm = ({ students, classes, onSubmit, onCancel, loading }) => {
   const [form, setForm] = useState({ studentId: "", classId: "" });
   const [errors, setErrors] = useState({});
@@ -58,7 +57,6 @@ const EnrollForm = ({ students, classes, onSubmit, onCancel, loading }) => {
   );
 };
 
-// ─── Página principal ──────────────────────────────────────────────────────────
 const STATUS_BADGE = {
   active:   { bg: "#c6f6d5", color: "#276749", label: "Ativa" },
   inactive: { bg: "#fed7d7", color: "#9b2c2c", label: "Inativa" },
@@ -80,7 +78,6 @@ const Enrollments = () => {
 
   useEffect(() => {
     let currentPage = page;
-
     if (prevSearch.current !== search) {
       prevSearch.current = search;
       currentPage = 1;
@@ -88,7 +85,6 @@ const Enrollments = () => {
     }
 
     let cancelled = false;
-
     const load = async () => {
       setLoading(true);
       try {
@@ -135,7 +131,7 @@ const Enrollments = () => {
       setModal(null);
       setPage(1);
     } catch (err) {
-      alert(err.response?.data?.message || "Erro ao matricular aluno.");
+      alert(err.response?.data?.error || "Erro ao matricular aluno.");
     } finally { setSaving(false); }
   };
 
@@ -146,7 +142,7 @@ const Enrollments = () => {
       setModal(null);
       setPage(1);
     } catch (err) {
-      alert(err.response?.data?.message || "Erro ao cancelar matrícula.");
+      alert(err.response?.data?.error || "Erro ao cancelar matrícula.");
     } finally { setSaving(false); }
   };
 
@@ -176,7 +172,6 @@ const Enrollments = () => {
         <button onClick={openCreate} style={btn("#1a365d", "#fff")}>+ Nova Matrícula</button>
       </div>
 
-      {/* Search */}
       <div style={{ marginBottom: 20, maxWidth: 340, display: "flex", alignItems: "center", gap: 10, background: "#f7f9fc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "0 14px" }}>
         <span style={{ color: "#a0aec0" }}>🔍</span>
         <input
