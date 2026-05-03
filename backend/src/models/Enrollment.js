@@ -15,7 +15,7 @@ const Enrollment = sequelize.define("Enrollment", {
     type: DataTypes.UUID,
     allowNull: false,
     references: { 
-      model: Student, 
+      model: 'students', 
       key: 'id' }
   },
 
@@ -23,7 +23,7 @@ const Enrollment = sequelize.define("Enrollment", {
    type: DataTypes.UUID,
     allowNull: false,
     references: { 
-      model: Class, 
+      model: 'classes', 
       key: 'id' }
   },
 
@@ -42,10 +42,10 @@ const Enrollment = sequelize.define("Enrollment", {
 });
 
 // Relacionamento N:N
-Student.belongsToMany(Class, { through: Enrollment, foreignKey: 'student_id' });
-Class.belongsToMany(Student, { through: Enrollment, foreignKey: 'class_id' });
+Student.belongsToMany(Class, { through: Enrollment, foreignKey: 'student_id', as: 'classes' });
+Class.belongsToMany(Student, { through: Enrollment, foreignKey: 'class_id', as: 'students' });
 
-Enrollment.belongsTo(Student, { foreignKey: 'student_id' });
-Enrollment.belongsTo(Class, { foreignKey: 'class_id' });
+Enrollment.belongsTo(Student, { foreignKey: 'student_id', as: 'student' });
+Enrollment.belongsTo(Class, { foreignKey: 'class_id', as: 'class' });
 
 export default Enrollment;

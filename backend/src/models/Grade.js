@@ -1,4 +1,6 @@
 import { DataTypes } from 'sequelize';
+import Enrollment from './Enrollment.js';
+import User from './User.js';
 import { sequelize } from '../config/connection.js';
 
 const Grade = sequelize.define(
@@ -45,16 +47,19 @@ const Grade = sequelize.define(
   }
 );
 
-Grade.associate = (models) => {
-  Grade.belongsTo(models.Enrollment, {
-    foreignKey: 'enrollment_id',
-    as: 'enrollment',
-  });
+Grade.belongsTo(Enrollment, {
+  foreignKey: 'enrollment_id',
+  as: 'enrollment',
+});
 
-  Grade.belongsTo(models.User, {
-    foreignKey: 'teacher_id',
-    as: 'teacher',
-  });
-};
+Grade.belongsTo(User, {
+  foreignKey: 'teacher_id',
+  as: 'teacher',
+});
+
+Enrollment.hasMany(Grade, {
+  foreignKey: 'enrollment_id',
+  as: 'grades'
+});
 
 export default Grade;
