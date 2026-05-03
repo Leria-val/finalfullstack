@@ -1,4 +1,5 @@
 import { Op } from "sequelize";
+import sequelize from "../config/connection.js";
 import Student from "../models/Student.js";
 import User from "../models/User.js";
 import { formatStudentResponse } from "../utils/dataFormatter.js";
@@ -6,44 +7,62 @@ import { formatStudentResponse } from "../utils/dataFormatter.js";
 export const studentController = {
 
   create: async (req, res) => {
+    const t = await sequelize.transaction(); 
     try {
-      const { user_id, registration_number, course, birthDate, phone } = req.body;
+      const { 
+        name, email, password, // Datos de User
+        registration_number, musical_level, instrument, birth_date, phone // Datos de Student
+      } = req.body;
 
-      if (!user_id || !registration_number || !course) {
-        return res.status(400).json({ error: "userId, matrícula e curso são obrigatórios." });
+      
+      if (!name || !email || !password || !registration_number || !birth_date || !phone) {
+        return res.status(400).json({ error: "Dados de usuário e acadêmicos são obrigatórios." });
       }
 
-      const user = await User.findOne({ where: { id: user_id, role: "STUDENT" } });
-      if (!user) {
-        return res.status(404).json({ error: "Usuário não encontrado ou sem role de aluno." });
+      const userExists = await User.findOne({ where: { email } });
+      if (userExists) {
+        await t.rollback();
+        return res.status(409).json({ error: "E-mail já cadastrado." });
       }
 
-      const alreadyExists = await Student.findOne({ where: { user_id } });
-      if (alreadyExists) {
-        return res.status(409).json({ error: "Este usuário já possui um perfil de aluno." });
-      }
-
-      const enrollmentTaken = await Student.findOne({ where: { registration_number } });
-      if (enrollmentTaken) {
+      const registrationExists = await Student.findOne({ where: { registration_number } });
+      if (registrationExists) {
+        await t.rollback();
         return res.status(409).json({ error: "Matrícula já cadastrada." });
       }
 
+
+      const user = await User.create({
+        name,
+        email,
+        password,
+        role: "STUDENT" 
+      }, { transaction: t });
+
+     
       const student = await Student.create({ 
-        user_id, 
+        user_id: user.id, 
         registration_number, 
-        course, 
-        birthDate, 
-        phone });
+        musical_level, 
+        instrument, 
+        birth_date, 
+        phone,
+        status: 'ACTIVE'
+      }, { transaction: t });
+
+      await t.commit(); 
+
 
       const full = await Student.findByPk(student.id, {
         include: [{ model: User, as: "authInfo", attributes: ["id", "name", "email"] }],
       });
 
       return res.status(201).json({
-        message: "Aluno criado com sucesso.",
+        message: "Aluno e conta criados com sucesso.",
         student: formatStudentResponse(full),
       });
     } catch (error) {
+      await t.rollback();
       res.status(500).json({ error: "Erro ao criar aluno: " + error.message });
     }
   },
@@ -53,7 +72,7 @@ export const studentController = {
       const {
         name,
         registration_number,
-        course,
+        instrument,
         page = 1,
         limit = 10,
         orderBy = "name",
@@ -62,20 +81,20 @@ export const studentController = {
 
       const studentWhere = {};
       if (registration_number) studentWhere.registration_number = { [Op.iLike]: `%${registration_number}%` };
-      if (course)     studentWhere.course     = { [Op.iLike]: `%${course}%` };
+      if (instrument) studentWhere.instrument = { [Op.iLike]: `%${instrument}%` };
 
       const userWhere = {};
       if (name) userWhere.name = { [Op.iLike]: `%${name}%` };
 
       const sortableFields = {
-        name:       [{ model: User, as: "authInfo" }, "name"],
-        registration_number: "registration_number,",
-        course:     "course",
-        createdAt:  "createdAt",
+        name: [{ model: User, as: "authInfo" }, "name"],
+        registration_number: "registration_number",
+        instrument: "instrument",
+        createdAt: "createdAt",
       };
-      const sortField = sortableFields[orderBy] || [{ model: User, as: "user" }, "name"];
-      const sortDir   = ["ASC", "DESC"].includes(order.toUpperCase()) ? order.toUpperCase() : "ASC";
-
+      
+      const sortField = sortableFields[orderBy] || [{ model: User, as: "authInfo" }, "name"];
+      const sortDir = ["ASC", "DESC"].includes(order.toUpperCase()) ? order.toUpperCase() : "ASC";
       const offset = (parseInt(page) - 1) * parseInt(limit);
 
       const { rows: students, count: total } = await Student.findAndCountAll({
@@ -110,9 +129,7 @@ export const studentController = {
         include: [{ model: User, as: "authInfo", attributes: ["id", "name", "email", "role"] }],
       });
 
-      if (!student) {
-        return res.status(404).json({ error: "Aluno não encontrado." });
-      }
+      if (!student) return res.status(404).json({ error: "Aluno não encontrado." });
 
       return res.status(200).json({ student: formatStudentResponse(student) });
     } catch (error) {
@@ -123,27 +140,23 @@ export const studentController = {
   update: async (req, res) => {
     try {
       const student = await Student.findByPk(req.params.id);
-      if (!student) {
-        return res.status(404).json({ error: "Aluno não encontrado." });
-      }
+      if (!student) return res.status(404).json({ error: "Aluno não encontrado." });
 
-      const { registration_number, course, birthDate, phone } = req.body;
+      const { registration_number, musical_level, instrument, birth_date, phone, status } = req.body;
 
       if (registration_number && registration_number !== student.registration_number) {
-        const conflict = await Student.findOne({ where: { registration_number, } });
-        if (conflict) {
-          return res.status(409).json({ error: "Matrícula já em uso." });
-        }
+        const conflict = await Student.findOne({ where: { registration_number } });
+        if (conflict) return res.status(409).json({ error: "Matrícula já em uso." });
       }
 
-      await student.update({ registration_number, course, birthDate, phone });
+      await student.update({ registration_number, musical_level, instrument, birth_date, phone, status });
 
       const updated = await Student.findByPk(student.id, {
         include: [{ model: User, as: "authInfo", attributes: ["id", "name", "email"] }],
       });
 
       return res.status(200).json({
-        message: "Aluno atualizado com sucesso.",
+        message: "Dados acadêmicos atualizados com sucesso.",
         student: formatStudentResponse(updated),
       });
     } catch (error) {
@@ -154,13 +167,11 @@ export const studentController = {
   delete: async (req, res) => {
     try {
       const student = await Student.findByPk(req.params.id);
-      if (!student) {
-        return res.status(404).json({ error: "Aluno não encontrado." });
-      }
+      if (!student) return res.status(404).json({ error: "Aluno não encontrado." });
 
-      await student.destroy();
+    
 
-      return res.status(200).json({ message: "Aluno removido com sucesso." });
+      return res.status(200).json({ message: "Aluno e conta removidos com sucesso." });
     } catch (error) {
       res.status(500).json({ error: "Erro ao remover aluno: " + error.message });
     }

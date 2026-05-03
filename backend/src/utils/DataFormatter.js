@@ -31,6 +31,11 @@ export const formatStudentResponse = (student) => {
     name: s.authInfo?.name ?? null, 
     email: s.authInfo?.email ?? null,
     registration_number: s.registration_number,
+    instrument: s.instrument ?? "Não definido",
+    musical_level: s.musical_level ?? "Iniciante",
+    phone: s.phone ?? null,
+    birth_date: formatDate(s.birth_date),
+    status: s.status,
     created_at: formatDateTime(s.created_at),
     updated_at: formatDateTime(s.updated_at),
   };
