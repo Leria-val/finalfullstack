@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import Table from "../components/Table";
-import Modal from "../components/Modal";
-import Input from "../components/Input";
-import api from "../services/api";
+import Table from "../components/Table.jsx";
+import Modal from "../components/Modal.jsx";
+import Input from "../components/Input.jsx";
+import api from "../services/api.js";
 
 const ROLES = ["admin", "teacher", "student"];
 const EMPTY_FORM = { name: "", email: "", password: "", role: "student" };
@@ -13,7 +13,6 @@ const ROLE_BADGE = {
   student: { bg: "#c6f6d5", color: "#276749" },
 };
 
-// ─── Formulário ────────────────────────────────────────────────────────────────
 const UserForm = ({ initial = EMPTY_FORM, isEdit = false, onSubmit, onCancel, loading }) => {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
@@ -67,8 +66,7 @@ const UserForm = ({ initial = EMPTY_FORM, isEdit = false, onSubmit, onCancel, lo
   );
 };
 
-// ─── Página ────────────────────────────────────────────────────────────────────
-const Users = () => {
+const User = () => {
   const [users, setUsers]           = useState([]);
   const [loading, setLoading]       = useState(false);
   const [saving, setSaving]         = useState(false);
@@ -83,8 +81,6 @@ const Users = () => {
 
   useEffect(() => {
     let currentPage = page;
-
-    // Se algum filtro mudou, reseta para página 1 sem useEffect separado
     const filtersChanged =
       prevFilters.current.search !== search ||
       prevFilters.current.roleFilter !== roleFilter;
@@ -96,7 +92,6 @@ const Users = () => {
     }
 
     let cancelled = false;
-
     const load = async () => {
       setLoading(true);
       try {
@@ -125,7 +120,7 @@ const Users = () => {
       setModal(null);
       setPage(1);
     } catch (err) {
-      alert(err.response?.data?.message || "Erro ao criar usuário.");
+      alert(err.response?.data?.error || "Erro ao criar usuário.");
     } finally { setSaving(false); }
   };
 
@@ -135,7 +130,7 @@ const Users = () => {
       await api.put(`/users/${selected.id}`, form);
       setModal(null);
     } catch (err) {
-      alert(err.response?.data?.message || "Erro ao atualizar usuário.");
+      alert(err.response?.data?.error || "Erro ao atualizar usuário.");
     } finally { setSaving(false); }
   };
 
@@ -146,7 +141,7 @@ const Users = () => {
       setModal(null);
       setPage(1);
     } catch (err) {
-      alert(err.response?.data?.message || "Erro ao excluir usuário.");
+      alert(err.response?.data?.error || "Erro ao excluir usuário.");
     } finally { setSaving(false); }
   };
 
@@ -156,7 +151,7 @@ const Users = () => {
     {
       key: "role", label: "Perfil",
       render: (val) => {
-        const b = ROLE_BADGE[val] ?? { bg: "#edf2f7", color: "#4a5568" };
+        const b = ROLE_BADGE[val?.toLowerCase()] ?? { bg: "#edf2f7", color: "#4a5568" };
         return (
           <span style={{ background: b.bg, color: b.color, borderRadius: 20, padding: "3px 11px", fontSize: 12, fontWeight: 700, textTransform: "capitalize" }}>
             {val}
@@ -218,7 +213,7 @@ const Users = () => {
 
       <Modal isOpen={modal === "edit"} onClose={() => setModal(null)} title="Editar Usuário">
         <UserForm
-          initial={{ name: selected?.name ?? "", email: selected?.email ?? "", password: "", role: selected?.role ?? "student" }}
+          initial={{ name: selected?.name ?? "", email: selected?.email ?? "", password: "", role: selected?.role?.toLowerCase() ?? "student" }}
           isEdit onSubmit={handleEdit} onCancel={() => setModal(null)} loading={saving}
         />
       </Modal>
@@ -241,4 +236,4 @@ const h1Style    = { margin: 0, fontSize: 26, fontWeight: 800, color: "#1a365d",
 const labelStyle = { fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#2d3748", letterSpacing: "0.02em", textTransform: "uppercase" };
 const btn = (bg, color) => ({ background: bg, color, border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" });
 
-export default Users;
+export default User;

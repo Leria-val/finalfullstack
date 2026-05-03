@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import Table from "../components/Table";
-import Modal from "../components/Modal";
-import Input from "../components/Input";
-import api from "../services/api";
+import Table from "../components/Table.jsx";
+import Modal from "../components/Modal.jsx";
+import Input from "../components/Input.jsx";
+import api from "../services/api.js";
 
 const EMPTY_FORM = { userId: "", enrollment: "", course: "", birthDate: "", phone: "" };
 
-// ─── Formulário ────────────────────────────────────────────────────────────────
 const StudentForm = ({ initial = EMPTY_FORM, onSubmit, onCancel, loading }) => {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
@@ -36,13 +35,13 @@ const StudentForm = ({ initial = EMPTY_FORM, onSubmit, onCancel, loading }) => {
       <Input label="Telefone"           name="phone"      value={form.phone}      onChange={handle} placeholder="(00) 00000-0000" />
       <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
         <button type="button" onClick={onCancel} style={btn("#f7f9fc", "#4a5568")}>Cancelar</button>
-        <button type="submit" disabled={loading}  style={btn("#1a365d", "#fff")}>{loading ? "Salvando..." : "Salvar"}</button>
+        <button type="submit" disabled={loading} style={btn("#1a365d", "#fff")}>{loading ? "Salvando..." : "Salvar"}</button>
       </div>
     </form>
   );
 };
 
-// ─── Página ────────────────────────────────────────────────────────────────────
+
 const Students = () => {
   const [students, setStudents]     = useState([]);
   const [loading, setLoading]       = useState(false);
@@ -53,13 +52,10 @@ const Students = () => {
   const [page, setPage]             = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Ref para saber se o search mudou e resetar page
   const prevSearch = useRef(search);
 
   useEffect(() => {
     let currentPage = page;
-
-    // Se o search mudou, busca na página 1 sem chamar setPage separadamente
     if (prevSearch.current !== search) {
       prevSearch.current = search;
       currentPage = 1;
@@ -67,7 +63,6 @@ const Students = () => {
     }
 
     let cancelled = false;
-
     const load = async () => {
       setLoading(true);
       try {
@@ -96,7 +91,7 @@ const Students = () => {
       setModal(null);
       setPage(1);
     } catch (err) {
-      alert(err.response?.data?.message || "Erro ao criar aluno.");
+      alert(err.response?.data?.error || "Erro ao criar aluno.");
     } finally { setSaving(false); }
   };
 
@@ -106,7 +101,7 @@ const Students = () => {
       await api.put(`/students/${selected.id}`, form);
       setModal(null);
     } catch (err) {
-      alert(err.response?.data?.message || "Erro ao atualizar aluno.");
+      alert(err.response?.data?.error || "Erro ao atualizar aluno.");
     } finally { setSaving(false); }
   };
 
@@ -117,7 +112,7 @@ const Students = () => {
       setModal(null);
       setPage(1);
     } catch (err) {
-      alert(err.response?.data?.message || "Erro ao excluir aluno.");
+      alert(err.response?.data?.error || "Erro ao excluir aluno.");
     } finally { setSaving(false); }
   };
 
@@ -178,7 +173,7 @@ const Students = () => {
 
       <Modal isOpen={modal === "delete"} onClose={() => setModal(null)} title="Excluir Aluno" size="sm">
         <p style={{ color: "#4a5568", marginTop: 0 }}>
-          Tem certeza que deseja excluir <strong>{selected?.name}</strong>? Esta ação não pode ser desfeita.
+          Tem certeza que deseja excluir <strong>{selected?.name}</strong>?
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button onClick={() => setModal(null)} style={btn("#f7f9fc", "#4a5568")}>Cancelar</button>
