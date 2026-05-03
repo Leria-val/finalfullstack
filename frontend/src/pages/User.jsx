@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import Table from "../../components/Table";
-import Modal from "../../components/Modal";
-import Input from "../../components/Input";
-import api from "../../services/api";
+import Table from "../components/Table";
+import Modal from "../components/Modal";
+import Input from "../components/Input";
+import api from "../services/api";
 
 const ROLES = ["admin", "teacher", "student"];
 const EMPTY_FORM = { name: "", email: "", password: "", role: "student" };

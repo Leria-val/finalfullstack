@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import Table from "../../components/Table";
-import Modal from "../../components/Modal";
-import api from "../../services/api";
+import Table from "../components/Table";
+import Modal from "../components/Modal";
+import api from "../services/api";
 
 // ─── Formulário de matrícula ───────────────────────────────────────────────────
 const EnrollForm = ({ students, classes, onSubmit, onCancel, loading }) => {
