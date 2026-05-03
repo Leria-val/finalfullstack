@@ -3,8 +3,9 @@ import Table from "../components/Table.jsx";
 import Modal from "../components/Modal.jsx";
 import api from "../services/api.js";
 
+/* ── EnrollForm ────────────────────────────────────────────────── */
 const EnrollForm = ({ students, classes, onSubmit, onCancel, loading }) => {
-  const [form, setForm] = useState({ studentId: "", classId: "" });
+  const [form, setForm]     = useState({ studentId: "", classId: "" });
   const [errors, setErrors] = useState({});
 
   const validate = () => {
@@ -21,46 +22,59 @@ const EnrollForm = ({ students, classes, onSubmit, onCancel, loading }) => {
     onSubmit(form);
   };
 
-  const sel = (hasError) => ({
-    width: "100%", padding: "11px 14px",
-    border: `1.5px solid ${hasError ? "#e53e3e" : "#e2e8f0"}`,
-    borderRadius: 10, background: "#f7f9fc",
-    fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1a202c",
-    outline: "none", cursor: "pointer", boxSizing: "border-box",
-  });
-
   return (
-    <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <label style={labelStyle}>Aluno *</label>
-        <select value={form.studentId} onChange={(e) => setForm((p) => ({ ...p, studentId: e.target.value }))} style={sel(errors.studentId)}>
+    <form onSubmit={submit} className="form-col" noValidate>
+
+      <div className="form-field">
+        <label className="form-label">
+          Aluno <span className="required-star" aria-hidden="true">*</span>
+        </label>
+        <select
+          value={form.studentId}
+          onChange={(e) => setForm((p) => ({ ...p, studentId: e.target.value }))}
+          className={`form-select${errors.studentId ? " has-error" : ""}`}
+        >
           <option value="">Selecione um aluno...</option>
-          {students.map((s) => <option key={s.id} value={s.id}>{s.name} — {s.enrollment}</option>)}
+          {students.map((s) => (
+            <option key={s.id} value={s.id}>{s.name} — {s.enrollment}</option>
+          ))}
         </select>
-        {errors.studentId && <span style={errStyle}>{errors.studentId}</span>}
+        {errors.studentId && <span className="form-error" role="alert">{errors.studentId}</span>}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <label style={labelStyle}>Turma *</label>
-        <select value={form.classId} onChange={(e) => setForm((p) => ({ ...p, classId: e.target.value }))} style={sel(errors.classId)}>
+      <div className="form-field">
+        <label className="form-label">
+          Turma <span className="required-star" aria-hidden="true">*</span>
+        </label>
+        <select
+          value={form.classId}
+          onChange={(e) => setForm((p) => ({ ...p, classId: e.target.value }))}
+          className={`form-select${errors.classId ? " has-error" : ""}`}
+        >
           <option value="">Selecione uma turma...</option>
-          {classes.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.subject}</option>)}
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>{c.name} — {c.subject}</option>
+          ))}
         </select>
-        {errors.classId && <span style={errStyle}>{errors.classId}</span>}
+        {errors.classId && <span className="form-error" role="alert">{errors.classId}</span>}
       </div>
 
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
-        <button type="button" onClick={onCancel} style={btn("#f7f9fc", "#4a5568")}>Cancelar</button>
-        <button type="submit" disabled={loading} style={btn("#1a365d", "#fff")}>{loading ? "Matriculando..." : "Matricular"}</button>
+      <div className="form-row-actions">
+        <button type="button" onClick={onCancel} className="btn btn--secondary">Cancelar</button>
+        <button type="submit" disabled={loading} className="btn btn--primary">
+          {loading ? "Matriculando..." : "Matricular"}
+        </button>
       </div>
     </form>
   );
 };
 
-const STATUS_BADGE = {
-  active:   { bg: "#c6f6d5", color: "#276749", label: "Ativa" },
-  inactive: { bg: "#fed7d7", color: "#9b2c2c", label: "Inativa" },
+/* ── Enrollments page ──────────────────────────────────────────── */
+const STATUS_MAP = {
+  active:   "badge badge--approved",
+  inactive: "badge badge--failed",
 };
+const STATUS_LABEL = { active: "Ativa", inactive: "Inativa" };
 
 const Enrollments = () => {
   const [enrollments, setEnrollments] = useState([]);
@@ -101,7 +115,6 @@ const Enrollments = () => {
         if (!cancelled) setLoading(false);
       }
     };
-
     load();
     return () => { cancelled = true; };
   }, [search, page]);
@@ -114,15 +127,10 @@ const Enrollments = () => {
       ]);
       setStudents(sRes.data.students);
       setClasses(cRes.data.classes);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  const openCreate = () => {
-    fetchOptions();
-    setModal("create");
-  };
+  const openCreate = () => { fetchOptions(); setModal("create"); };
 
   const handleCreate = async (form) => {
     setSaving(true);
@@ -153,32 +161,35 @@ const Enrollments = () => {
     { key: "subject",     label: "Matéria" },
     { key: "teacherName", label: "Professor" },
     {
-      key: "status", label: "Status",
-      render: (val = "active") => {
-        const b = STATUS_BADGE[val] ?? STATUS_BADGE.active;
-        return <span style={{ background: b.bg, color: b.color, borderRadius: 20, padding: "3px 11px", fontSize: 12, fontWeight: 700 }}>{b.label}</span>;
-      },
+      key: "status",
+      label: "Status",
+      render: (val = "active") => (
+        <span className={STATUS_MAP[val] ?? STATUS_MAP.active}>
+          {STATUS_LABEL[val] ?? "Ativa"}
+        </span>
+      ),
     },
     { key: "createdAt", label: "Matriculado em" },
   ];
 
   return (
-    <div style={pageStyle}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
-        <div>
-          <h1 style={h1Style}>Matrículas</h1>
-          <p style={{ margin: 0, color: "#718096", fontSize: 14 }}>Vincule alunos às turmas da plataforma.</p>
+    <div className="page-wrapper">
+      <div className="page-topbar">
+        <div className="page-header">
+          <h1 className="page-title">Matrículas</h1>
+          <p className="page-subtitle">Vincule alunos às turmas da plataforma.</p>
         </div>
-        <button onClick={openCreate} style={btn("#1a365d", "#fff")}>+ Nova Matrícula</button>
+        <button onClick={openCreate} className="btn btn--primary">+ Nova Matrícula</button>
       </div>
 
-      <div style={{ marginBottom: 20, maxWidth: 340, display: "flex", alignItems: "center", gap: 10, background: "#f7f9fc", border: "1.5px solid #e2e8f0", borderRadius: 10, padding: "0 14px" }}>
-        <span style={{ color: "#a0aec0" }}>🔍</span>
+      <div className="inline-search">
+        <span className="inline-search-icon" aria-hidden="true">🔍</span>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nome do aluno..."
-          style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "#1a202c", padding: "11px 0" }}
+          className="inline-search-input"
+          aria-label="Buscar matrícula"
         />
       </div>
 
@@ -189,34 +200,38 @@ const Enrollments = () => {
       />
 
       {totalPages > 1 && (
-        <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 24 }}>
+        <div className="pagination">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button key={p} onClick={() => setPage(p)} style={{ ...btn(p === page ? "#1a365d" : "#f7f9fc", p === page ? "#fff" : "#4a5568"), padding: "6px 14px", minWidth: 36 }}>{p}</button>
+            <button
+              key={p} onClick={() => setPage(p)}
+              className={`pagination-btn${p === page ? " active" : ""}`}
+            >{p}</button>
           ))}
         </div>
       )}
 
       <Modal isOpen={modal === "create"} onClose={() => setModal(null)} title="Nova Matrícula">
-        <EnrollForm students={students} classes={classes} onSubmit={handleCreate} onCancel={() => setModal(null)} loading={saving} />
+        <EnrollForm
+          students={students} classes={classes}
+          onSubmit={handleCreate} onCancel={() => setModal(null)} loading={saving}
+        />
       </Modal>
 
       <Modal isOpen={modal === "delete"} onClose={() => setModal(null)} title="Cancelar Matrícula" size="sm">
-        <p style={{ color: "#4a5568", marginTop: 0 }}>
-          Tem certeza que deseja cancelar a matrícula de <strong>{selected?.studentName}</strong> na turma <strong>{selected?.className}</strong>?
+        <p className="delete-confirm-text">
+          Tem certeza que deseja cancelar a matrícula de{" "}
+          <strong>{selected?.studentName}</strong> na turma{" "}
+          <strong>{selected?.className}</strong>?
         </p>
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={() => setModal(null)} style={btn("#f7f9fc", "#4a5568")}>Voltar</button>
-          <button onClick={handleDelete} disabled={saving} style={btn("#c53030", "#fff")}>{saving ? "Cancelando..." : "Confirmar"}</button>
+        <div className="form-row-actions">
+          <button onClick={() => setModal(null)} className="btn btn--secondary">Voltar</button>
+          <button onClick={handleDelete} disabled={saving} className="btn btn--danger">
+            {saving ? "Cancelando..." : "Confirmar"}
+          </button>
         </div>
       </Modal>
     </div>
   );
 };
-
-const pageStyle  = { padding: "32px 40px", fontFamily: "'DM Sans', sans-serif", maxWidth: 1100, margin: "0 auto" };
-const h1Style    = { margin: 0, fontSize: 26, fontWeight: 800, color: "#1a365d", letterSpacing: "-0.02em" };
-const labelStyle = { fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#2d3748", letterSpacing: "0.02em", textTransform: "uppercase" };
-const errStyle   = { fontSize: 12, color: "#e53e3e", fontFamily: "'DM Sans', sans-serif" };
-const btn = (bg, color) => ({ background: bg, color, border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" });
 
 export default Enrollments;

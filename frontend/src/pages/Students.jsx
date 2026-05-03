@@ -6,11 +6,13 @@ import api from "../services/api.js";
 
 const EMPTY_FORM = { userId: "", enrollment: "", course: "", birthDate: "", phone: "" };
 
+/* ── StudentForm ───────────────────────────────────────────────── */
 const StudentForm = ({ initial = EMPTY_FORM, onSubmit, onCancel, loading }) => {
-  const [form, setForm] = useState(initial);
+  const [form, setForm]     = useState(initial);
   const [errors, setErrors] = useState({});
 
-  const handle = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const handle = (e) =>
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const validate = () => {
     const errs = {};
@@ -27,21 +29,43 @@ const StudentForm = ({ initial = EMPTY_FORM, onSubmit, onCancel, loading }) => {
   };
 
   return (
-    <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <Input label="ID do Usuário"      name="userId"     value={form.userId}     onChange={handle} placeholder="UUID do User vinculado" required error={errors.userId} />
-      <Input label="Matrícula"          name="enrollment" value={form.enrollment} onChange={handle} placeholder="Ex: 2024001" required error={errors.enrollment} />
-      <Input label="Curso"              name="course"     value={form.course}     onChange={handle} placeholder="Ex: Piano, Violão..." required error={errors.course} />
-      <Input label="Data de Nascimento" name="birthDate"  type="date" value={form.birthDate} onChange={handle} />
-      <Input label="Telefone"           name="phone"      value={form.phone}      onChange={handle} placeholder="(00) 00000-0000" />
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
-        <button type="button" onClick={onCancel} style={btn("#f7f9fc", "#4a5568")}>Cancelar</button>
-        <button type="submit" disabled={loading} style={btn("#1a365d", "#fff")}>{loading ? "Salvando..." : "Salvar"}</button>
+    <form onSubmit={submit} className="form-col" noValidate>
+      <Input
+        label="ID do Usuário" name="userId" value={form.userId}
+        onChange={handle} placeholder="UUID do User vinculado"
+        required error={errors.userId}
+      />
+      <Input
+        label="Matrícula" name="enrollment" value={form.enrollment}
+        onChange={handle} placeholder="Ex: 2024001"
+        required error={errors.enrollment}
+      />
+      <Input
+        label="Curso" name="course" value={form.course}
+        onChange={handle} placeholder="Ex: Piano, Violão..."
+        required error={errors.course}
+      />
+      <Input
+        label="Data de Nascimento" name="birthDate" type="date"
+        value={form.birthDate} onChange={handle}
+      />
+      <Input
+        label="Telefone" name="phone" value={form.phone}
+        onChange={handle} placeholder="(00) 00000-0000"
+      />
+      <div className="form-row-actions">
+        <button type="button" onClick={onCancel} className="btn btn--secondary">
+          Cancelar
+        </button>
+        <button type="submit" disabled={loading} className="btn btn--primary">
+          {loading ? "Salvando..." : "Salvar"}
+        </button>
       </div>
     </form>
   );
 };
 
-
+/* ── Students page ─────────────────────────────────────────────── */
 const Students = () => {
   const [students, setStudents]     = useState([]);
   const [loading, setLoading]       = useState(false);
@@ -117,75 +141,109 @@ const Students = () => {
   };
 
   const columns = [
-    { key: "name",       label: "Nome" },
-    { key: "email",      label: "E-mail" },
+    { key: "name",       label: "Nome"      },
+    { key: "email",      label: "E-mail"    },
     { key: "enrollment", label: "Matrícula" },
-    { key: "course",     label: "Curso" },
+    { key: "course",     label: "Curso"     },
     {
-      key: "status", label: "Status",
+      key: "status",
+      label: "Status",
       render: () => (
-        <span style={{ background: "#c6f6d5", color: "#276749", borderRadius: 20, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>
-          Ativo
-        </span>
+        <span className="status-badge status-badge--active">Ativo</span>
       ),
     },
   ];
 
   return (
-    <div style={pageStyle}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
-        <div>
-          <h1 style={h1Style}>Alunos</h1>
-          <p style={{ margin: 0, color: "#718096", fontSize: 14 }}>Gerencie os alunos cadastrados na plataforma.</p>
+    <div className="page-wrapper">
+
+      {/* ── Top bar ── */}
+      <div className="page-topbar">
+        <div className="page-header">
+          <h1 className="page-title">Alunos</h1>
+          <p className="page-subtitle">Gerencie os alunos cadastrados na plataforma.</p>
         </div>
-        <button onClick={() => setModal("create")} style={btn("#1a365d", "#fff")}>+ Novo Aluno</button>
+        <button onClick={() => setModal("create")} className="btn btn--primary">
+          + Novo Aluno
+        </button>
       </div>
 
-      <div style={{ marginBottom: 20, maxWidth: 340 }}>
-        <Input name="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome..." icon="🔍" />
+      {/* ── Search ── */}
+      <div className="page-search">
+        <Input
+          name="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por nome..."
+          icon="🔍"
+        />
       </div>
 
+      {/* ── Table ── */}
       <Table
-        columns={columns} data={students} loading={loading}
+        columns={columns}
+        data={students}
+        loading={loading}
         onEdit={(row) => { setSelected(row); setModal("edit"); }}
         onDelete={(row) => { setSelected(row); setModal("delete"); }}
         emptyMessage="Nenhum aluno encontrado."
       />
 
+      {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 24 }}>
+        <div className="pagination">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button key={p} onClick={() => setPage(p)} style={{ ...btn(p === page ? "#1a365d" : "#f7f9fc", p === page ? "#fff" : "#4a5568"), padding: "6px 14px", minWidth: 36 }}>{p}</button>
+            <button
+              key={p}
+              onClick={() => setPage(p)}
+              className={`pagination-btn${p === page ? " active" : ""}`}
+            >
+              {p}
+            </button>
           ))}
         </div>
       )}
 
+      {/* ── Modals ── */}
       <Modal isOpen={modal === "create"} onClose={() => setModal(null)} title="Novo Aluno">
-        <StudentForm onSubmit={handleCreate} onCancel={() => setModal(null)} loading={saving} />
+        <StudentForm
+          onSubmit={handleCreate}
+          onCancel={() => setModal(null)}
+          loading={saving}
+        />
       </Modal>
 
       <Modal isOpen={modal === "edit"} onClose={() => setModal(null)} title="Editar Aluno">
         <StudentForm
-          initial={{ enrollment: selected?.enrollment ?? "", course: selected?.course ?? "", birthDate: selected?.birthDate ?? "", phone: selected?.phone ?? "", userId: selected?.userId ?? "" }}
-          onSubmit={handleEdit} onCancel={() => setModal(null)} loading={saving}
+          initial={{
+            userId:     selected?.userId     ?? "",
+            enrollment: selected?.enrollment ?? "",
+            course:     selected?.course     ?? "",
+            birthDate:  selected?.birthDate  ?? "",
+            phone:      selected?.phone      ?? "",
+          }}
+          onSubmit={handleEdit}
+          onCancel={() => setModal(null)}
+          loading={saving}
         />
       </Modal>
 
       <Modal isOpen={modal === "delete"} onClose={() => setModal(null)} title="Excluir Aluno" size="sm">
-        <p style={{ color: "#4a5568", marginTop: 0 }}>
+        <p className="delete-confirm-text">
           Tem certeza que deseja excluir <strong>{selected?.name}</strong>?
         </p>
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={() => setModal(null)} style={btn("#f7f9fc", "#4a5568")}>Cancelar</button>
-          <button onClick={handleDelete} disabled={saving} style={btn("#c53030", "#fff")}>{saving ? "Excluindo..." : "Excluir"}</button>
+        <div className="form-row-actions">
+          <button onClick={() => setModal(null)} className="btn btn--secondary">
+            Cancelar
+          </button>
+          <button onClick={handleDelete} disabled={saving} className="btn btn--danger">
+            {saving ? "Excluindo..." : "Excluir"}
+          </button>
         </div>
       </Modal>
+
     </div>
   );
 };
-
-const pageStyle = { padding: "32px 40px", fontFamily: "'DM Sans', sans-serif", maxWidth: 1100, margin: "0 auto" };
-const h1Style   = { margin: 0, fontSize: 26, fontWeight: 800, color: "#1a365d", letterSpacing: "-0.02em" };
-const btn = (bg, color) => ({ background: bg, color, border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" });
 
 export default Students;
