@@ -1,37 +1,37 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useCallback } from "react";
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
-const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : null;
-  });
+const STORAGE_KEY = "euphonica_auth";
 
-  const [token, setToken] = useState(() => {
-    return localStorage.getItem("token") || null;
-  });
+const loadFromStorage = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { token: null, user: null };
+  } catch {
+    return { token: null, user: null };
+  }
+};
 
-  const login = (newToken, newUser) => {
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
-  };
+export const AuthProvider = ({ children }) => {
+  const [auth, setAuth] = useState(loadFromStorage);
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setToken(null);
-    setUser(null);
-  };
+  const login = useCallback((token, user) => {
+    const payload = { token, user };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    setAuth(payload);
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    setAuth({ token: null, user: null });
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ token: auth.token, user: auth.user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export { AuthContext };
 export default AuthProvider;

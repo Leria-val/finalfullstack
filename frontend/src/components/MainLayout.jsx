@@ -1,12 +1,12 @@
 import { Outlet } from "react-router-dom";
-import Sidebar from "./Sidebar";
+import Sidebar from "./Sidebar.jsx";
 
 const MainLayout = () => {
   return (
     <div className="app-layout">
       <Sidebar />
       <main className="main-content">
-        <Outlet /> {/* Aquí se renderizarán las páginas (Dashboard, Students, etc.) */}
+        <Outlet />
       </main>
     </div>
   );

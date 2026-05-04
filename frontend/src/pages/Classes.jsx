@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Table from "../components/Table.jsx";
 import Modal from "../components/Modal.jsx";
 import Input from "../components/Input.jsx";
 import api from "../services/api.js";
 
-const EMPTY_FORM = { name: "", subject: "", teacher_id: "" };
+const EMPTY_FORM = { name: "", subject: "", teacherId: "" };
 
 /* ── ClassForm ─────────────────────────────────────────────────── */
 const ClassForm = ({ initial = EMPTY_FORM, teachers, onSubmit, onCancel, loading }) => {
@@ -17,7 +17,7 @@ const ClassForm = ({ initial = EMPTY_FORM, teachers, onSubmit, onCancel, loading
     const errs = {};
     if (!form.name.trim())    errs.name      = "Nome obrigatório.";
     if (!form.subject.trim()) errs.subject   = "Matéria obrigatória.";
-    if (!form.teacher_id)      errs.teacher_id = "Selecione um professor.";
+    if (!form.teacherId)      errs.teacherId = "Selecione um professor.";
     return errs;
   };
 
@@ -30,41 +30,25 @@ const ClassForm = ({ initial = EMPTY_FORM, teachers, onSubmit, onCancel, loading
 
   return (
     <form onSubmit={submit} className="form-col" noValidate>
-      <Input
-        label="Nome da Turma" name="name" value={form.name}
-        onChange={handle} placeholder="Ex: Turma A — Piano"
-        required error={errors.name}
-      />
-      <Input
-        label="Matéria" name="subject" value={form.subject}
-        onChange={handle} placeholder="Ex: Piano, Violão, Teoria Musical..."
-        required error={errors.subject}
-      />
+      <Input label="Nome da Turma" name="name"    value={form.name}    onChange={handle} placeholder="Ex: Turma A — Piano"               required error={errors.name} />
+      <Input label="Matéria"       name="subject" value={form.subject} onChange={handle} placeholder="Ex: Piano, Violão, Teoria Musical..." required error={errors.subject} />
 
       <div className="form-field">
-        <label className="form-label">
-          Professor <span className="required-star" aria-hidden="true">*</span>
-        </label>
+        <label className="form-label">Professor <span className="required-star" aria-hidden="true">*</span></label>
         <select
-          value={form.teacher_id}
-          onChange={(e) => setForm((p) => ({ ...p, teacher_id: e.target.value }))}
-          className={`form-select${errors.teacher_id ? " has-error" : ""}`}
+          value={form.teacherId}
+          onChange={(e) => setForm((p) => ({ ...p, teacherId: e.target.value }))}
+          className={`form-select${errors.teacherId ? " has-error" : ""}`}
         >
           <option value="">Selecione um professor...</option>
-          {teachers.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
+          {teachers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-        {errors.teacher_id && (
-          <span className="form-error" role="alert">{errors.teacher_id}</span>
-        )}
+        {errors.teacherId && <span className="form-error" role="alert">{errors.teacherId}</span>}
       </div>
 
       <div className="form-row-actions">
         <button type="button" onClick={onCancel} className="btn btn--secondary">Cancelar</button>
-        <button type="submit" disabled={loading} className="btn btn--primary">
-          {loading ? "Salvando..." : "Salvar"}
-        </button>
+        <button type="submit" disabled={loading} className="btn btn--primary">{loading ? "Salvando..." : "Salvar"}</button>
       </div>
     </form>
   );
@@ -81,37 +65,32 @@ const Classes = () => {
   const [selected, setSelected]     = useState(null);
   const [page, setPage]             = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [toast, setToast]           = useState(null);
 
-  const prevSearch = useRef(search);
+  const showToast = (msg, type = "error") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
-  useEffect(() => {
-    let currentPage = page;
-    if (prevSearch.current !== search) {
-      prevSearch.current = search;
-      currentPage = 1;
-      setPage(1);
+  const fetchClasses = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data } = await api.get("/classes", {
+        params: { name: search || undefined, page, limit: 10 },
+      });
+      setClasses(data.classes ?? []);
+      setTotalPages(data.totalPages ?? 1);
+    } catch (err) {
+      console.error(err);
+      showToast("Erro ao carregar turmas.");
+    } finally {
+      setLoading(false);
     }
-
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const { data } = await api.get("/classes", {
-          params: { name: search || undefined, page: currentPage, limit: 10 },
-        });
-        if (!cancelled) {
-          setClasses(data.classes ?? []);
-          setTotalPages(data.totalPages ?? 1);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
   }, [search, page]);
+
+  useEffect(() => { fetchClasses(); }, [fetchClasses]);
+
+  const handleSearch = (e) => { setSearch(e.target.value); setPage(1); };
 
   const fetchTeachers = async () => {
     try {
@@ -129,8 +108,9 @@ const Classes = () => {
       await api.post("/classes", form);
       setModal(null);
       setPage(1);
+      showToast("Turma criada!", "success");
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao criar turma.");
+      showToast(err.response?.data?.error || "Erro ao criar turma.");
     } finally { setSaving(false); }
   };
 
@@ -139,8 +119,10 @@ const Classes = () => {
     try {
       await api.put(`/classes/${selected.id}`, form);
       setModal(null);
+      showToast("Turma atualizada!", "success");
+      fetchClasses();
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao atualizar turma.");
+      showToast(err.response?.data?.error || "Erro ao atualizar turma.");
     } finally { setSaving(false); }
   };
 
@@ -150,27 +132,24 @@ const Classes = () => {
       await api.delete(`/classes/${selected.id}`);
       setModal(null);
       setPage(1);
+      showToast("Turma excluída.", "success");
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao excluir turma.");
+      showToast(err.response?.data?.error || "Erro ao excluir turma.");
     } finally { setSaving(false); }
   };
 
   const columns = [
-    { key: "name",        label: "Nome da Turma" },
-    { key: "subject",     label: "Matéria" },
-    { key: "teacherName", label: "Professor" },
-    {
-      key: "enrollmentCount",
-      label: "Alunos",
-      render: (val) => (
-        <span className="count-badge">{val ?? 0}</span>
-      ),
-    },
-    { key: "createdAt", label: "Criada em" },
+    { key: "name",            label: "Nome da Turma" },
+    { key: "subject",         label: "Matéria"       },
+    { key: "teacherName",     label: "Professor"     },
+    { key: "enrollmentCount", label: "Alunos",       render: (val) => <span className="count-badge">{val ?? 0}</span> },
+    { key: "createdAt",       label: "Criada em"     },
   ];
 
   return (
     <div className="page-wrapper">
+      {toast && <div className={`toast toast--${toast.type}`} role="alert">{toast.type === "success" ? "✅" : "⚠️"} {toast.msg}</div>}
+
       <div className="page-topbar">
         <div className="page-header">
           <h1 className="page-title">Turmas</h1>
@@ -180,11 +159,7 @@ const Classes = () => {
       </div>
 
       <div className="page-search">
-        <Input
-          name="search" value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nome..." icon="🔍"
-        />
+        <Input name="search" value={search} onChange={handleSearch} placeholder="Buscar por nome..." icon="🔍" />
       </div>
 
       <Table
@@ -197,10 +172,7 @@ const Classes = () => {
       {totalPages > 1 && (
         <div className="pagination">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p} onClick={() => setPage(p)}
-              className={`pagination-btn${p === page ? " active" : ""}`}
-            >{p}</button>
+            <button key={p} onClick={() => setPage(p)} className={`pagination-btn${p === page ? " active" : ""}`}>{p}</button>
           ))}
         </div>
       )}
@@ -211,20 +183,16 @@ const Classes = () => {
 
       <Modal isOpen={modal === "edit"} onClose={() => setModal(null)} title="Editar Turma">
         <ClassForm
-          initial={{ name: selected?.name ?? "", subject: selected?.subject ?? "", teacher_id: selected?.teacher_id ?? "" }}
+          initial={{ name: selected?.name ?? "", subject: selected?.subject ?? "", teacherId: selected?.teacherId ?? "" }}
           teachers={teachers} onSubmit={handleEdit} onCancel={() => setModal(null)} loading={saving}
         />
       </Modal>
 
       <Modal isOpen={modal === "delete"} onClose={() => setModal(null)} title="Excluir Turma" size="sm">
-        <p className="delete-confirm-text">
-          Tem certeza que deseja excluir a turma <strong>{selected?.name}</strong>?
-        </p>
+        <p className="delete-confirm-text">Tem certeza que deseja excluir a turma <strong>{selected?.name}</strong>?</p>
         <div className="form-row-actions">
           <button onClick={() => setModal(null)} className="btn btn--secondary">Cancelar</button>
-          <button onClick={handleDelete} disabled={saving} className="btn btn--danger">
-            {saving ? "Excluindo..." : "Excluir"}
-          </button>
+          <button onClick={handleDelete} disabled={saving} className="btn btn--danger">{saving ? "Excluindo..." : "Excluir"}</button>
         </div>
       </Modal>
     </div>
