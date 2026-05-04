@@ -24,7 +24,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);         // Login e Registro Geral
 app.use('/api/students', studentRoutes); // Cadastro de perfil de aluno
 app.use('/api/classes', classRoutes);     // Gestão de turmas
-app.use('/api/enroll', enrollRoutes);     // Matrículas (vínculo aluno-turma)
+app.use('/api/enrollments', enrollRoutes);     // Matrículas (vínculo aluno-turma)
 app.use('/api/grades', gradeRoutes);     // Lançamento de notas
 app.use('/api/users', userRoutes);
 

@@ -42,6 +42,7 @@ export const formatStudentResponse = (student) => {
 };
 
 export const formatGradeResponse = (grade) => {
+  // O Sequelize usa objetos complexos, o toJSON() limpa para um objeto JS simples
   const g = grade.toJSON ? grade.toJSON() : { ...grade };
   
   return {
@@ -49,8 +50,11 @@ export const formatGradeResponse = (grade) => {
     value: parseFloat(g.value),
     formatted_value: formatGradeValue(g.value),
     status: gradeStatus(g.value),
-    student: g.enrollment?.student?.authInfo?.name ?? "N/A",
-    class: g.enrollment?.class?.name ?? "N/A",
+    period: g.period ?? "—",
+    description: g.description ?? "Sem observações",
+    studentName: g.enrollment?.student?.authInfo?.name ?? "N/A",
+    className: g.enrollment?.class?.name ?? "N/A",
+    
     created_at: formatDateTime(g.created_at)
   };
 };
