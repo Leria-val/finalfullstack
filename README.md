@@ -82,7 +82,7 @@ O projeto utiliza um modelo relacional robusto com as seguintes entidades:
 
 ## ✒️ Autores
 
-* **Valeria Martinez**  -  * **Leonardo Bellorin** 
+* **Valeria Martinez**  -  * **Leonardo Bellorin**  -  * **Samyra Santos**
 
 ---
 
