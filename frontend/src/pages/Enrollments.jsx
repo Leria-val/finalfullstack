@@ -80,6 +80,7 @@ const Enrollments = () => {
   const [page, setPage]               = useState(1);
   const [totalPages, setTotalPages]   = useState(1);
   const [toast, setToast]             = useState(null);
+  const [refresh, setRefresh]         = useState(0);
 
   const showToast = (msg, type = "error") => {
     setToast({ msg, type });
@@ -100,7 +101,7 @@ const Enrollments = () => {
     } finally {
       setLoading(false);
     }
-  }, [search, page]);
+  }, [search, page, refresh]);
 
   useEffect(() => { fetchEnrollments(); }, [fetchEnrollments]);
 
@@ -122,10 +123,10 @@ const Enrollments = () => {
   const handleCreate = async (form) => {
     setSaving(true);
     try {
-      // FIX: send student_id and class_id (snake_case) matching backend
       await api.post("/enrollments", form);
       setModal(null);
       setPage(1);
+      setRefresh((r) => r + 1); // BUG FIX: força recarregamento mesmo se page já era 1
       showToast("Matrícula criada!", "success");
     } catch (err) {
       showToast(err.response?.data?.error || "Erro ao matricular aluno.");
@@ -138,6 +139,7 @@ const Enrollments = () => {
       await api.delete(`/enrollments/${selected.id}`);
       setModal(null);
       setPage(1);
+      setRefresh((r) => r + 1); // BUG FIX: força recarregamento mesmo se page já era 1
       showToast("Matrícula cancelada.", "success");
     } catch (err) {
       showToast(err.response?.data?.error || "Erro ao cancelar matrícula.");

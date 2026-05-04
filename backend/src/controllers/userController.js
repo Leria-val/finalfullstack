@@ -1,33 +1,54 @@
 import { Op } from "sequelize";
+import sequelize from "../config/connection.js";
 import User from "../models/User.js";
+import Student from "../models/Student.js";
 
 export const userController = {
 
   create: async (req, res) => {
+    const t = await sequelize.transaction();
     try {
       const { name, email, password, role } = req.body;
 
       if (!name || !email || !password || !role) {
+        await t.rollback();
         return res.status(400).json({ error: "Todos os campos são obrigatórios (nome, email, senha, cargo)." });
       }
 
-      // FIX: accept ADMIN, TEACHER, STUDENT from this endpoint
       if (!["ADMIN", "TEACHER", "STUDENT"].includes(role?.toUpperCase())) {
+        await t.rollback();
         return res.status(400).json({ error: "Cargo inválido. Use: ADMIN, TEACHER ou STUDENT." });
       }
 
       const userExists = await User.findOne({ where: { email } });
       if (userExists) {
+        await t.rollback();
         return res.status(409).json({ error: "E-mail já cadastrado no sistema." });
       }
 
-      const newUser = await User.create({ name, email, password, role: role.toUpperCase() });
+      const newUser = await User.create({ name, email, password, role: role.toUpperCase() }, { transaction: t });
+
+      // BUG FIX: quando o papel é STUDENT, criar automaticamente o registro
+      // na tabela students para que o dashboard e matrículas funcionem corretamente
+      if (role.toUpperCase() === "STUDENT") {
+        const timestamp = Date.now();
+        await Student.create({
+          user_id: newUser.id,
+          registration_number: `AUTO-${timestamp}`,
+          birth_date: "2000-01-01",
+          phone: "00000000000",
+          status: "ACTIVE",
+        }, { transaction: t });
+      }
+
+      await t.commit();
 
       return res.status(201).json({
         message: `Usuário (${role.toUpperCase()}) criado com sucesso.`,
         user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role },
       });
     } catch (error) {
+      await t.rollback();
       res.status(500).json({ error: "Erro ao criar usuário: " + error.message });
     }
   },
