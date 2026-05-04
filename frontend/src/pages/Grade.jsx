@@ -63,10 +63,13 @@ const GradeForm = ({ enrollments, onSubmit, onCancel, loading }) => {
 };
 
 const STATUS_CLS = {
-  Aprovado:    "badge badge--approved",
-  Recuperação: "badge badge--recovery",
-  Reprovado:   "badge badge--failed",
+  aprovado:    "badge badge--approved",
+  recuperação: "badge badge--recovery",
+  reprovado:   "badge badge--failed",
 };
+
+const getStatusCls = (val) =>
+  STATUS_CLS[val?.toLowerCase()] ?? "badge badge--approved";
 
 /* ── Grade page ────────────────────────────────────────────────── */
 const Grade = () => {
@@ -148,7 +151,7 @@ const Grade = () => {
     { key: "className",      label: "Turma",      render: (_, row) => row.class?.name   ?? row.className   ?? "—" },
     { key: "period",         label: "Período"                                                                       },
     { key: "formattedValue", label: "Nota",       render: (val) => <span className="grade-value">{val}</span>      },
-    { key: "status",         label: "Status",     render: (val) => <span className={STATUS_CLS[val] ?? "badge badge--failed"}>{val}</span> },
+    { key: "status",         label: "Status",     render: (val) => <span className={getStatusCls(val)}>{val}</span> },
     { key: "description",    label: "Observação", render: (val) => val ?? "—"                                       },
   ];
 

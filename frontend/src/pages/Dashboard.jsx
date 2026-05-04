@@ -118,10 +118,13 @@ const TeacherDashboard = ({ user }) => {
 
 /* ── StudentDashboard ──────────────────────────────────────────── */
 const BADGE_CLASS = {
-  Aprovado:    "badge badge--approved",
-  Recuperação: "badge badge--recovery",
-  Reprovado:   "badge badge--failed",
+  aprovado:    "badge badge--approved",
+  recuperação: "badge badge--recovery",
+  reprovado:   "badge badge--failed",
 };
+
+const getBadgeClass = (status) =>
+  BADGE_CLASS[status?.toLowerCase()] ?? "badge badge--approved";
 
 const StudentDashboard = ({ user }) => {
   const [grades, setGrades]   = useState([]);
@@ -174,7 +177,7 @@ const StudentDashboard = ({ user }) => {
                   <td>{g.period}</td>
                   <td className="td-grade">{g.formattedValue}</td>
                   <td>
-                    <span className={BADGE_CLASS[g.status] ?? "badge badge--failed"}>
+                    <span className={getBadgeClass(g.status)}>
                       {g.status}
                     </span>
                   </td>
