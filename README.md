@@ -39,8 +39,8 @@
 
 ### 1. Clonar o repositório
 ```bash
-git clone https://github.com/seu-usuario/euphonica.git
-cd euphonica
+git clone https://github.com/seu-usuario/finalfullstack.git
+cd finalfullstack
 ```
 
 ### 2. Configurar o Backend
