@@ -4,7 +4,7 @@ import Modal from "../components/Modal.jsx";
 import Input from "../components/Input.jsx";
 import api from "../services/api.js";
 
-const EMPTY_FORM = { name: "", subject: "", teacherId: "" };
+const EMPTY_FORM = { name: "", subject: "", teacher_id: "" };
 
 /* ── ClassForm ─────────────────────────────────────────────────── */
 const ClassForm = ({ initial = EMPTY_FORM, teachers, onSubmit, onCancel, loading }) => {
@@ -15,9 +15,9 @@ const ClassForm = ({ initial = EMPTY_FORM, teachers, onSubmit, onCancel, loading
 
   const validate = () => {
     const errs = {};
-    if (!form.name.trim())    errs.name      = "Nome obrigatório.";
-    if (!form.subject.trim()) errs.subject   = "Matéria obrigatória.";
-    if (!form.teacherId)      errs.teacherId = "Selecione um professor.";
+    if (!form.name.trim())    errs.name       = "Nome obrigatório.";
+    if (!form.subject.trim()) errs.subject    = "Matéria obrigatória.";
+    if (!form.teacher_id)     errs.teacher_id = "Selecione um professor.";
     return errs;
   };
 
@@ -30,25 +30,32 @@ const ClassForm = ({ initial = EMPTY_FORM, teachers, onSubmit, onCancel, loading
 
   return (
     <form onSubmit={submit} className="form-col" noValidate>
-      <Input label="Nome da Turma" name="name"    value={form.name}    onChange={handle} placeholder="Ex: Turma A — Piano"               required error={errors.name} />
+      <Input label="Nome da Turma" name="name"    value={form.name}    onChange={handle} placeholder="Ex: Turma A — Piano"                required error={errors.name} />
       <Input label="Matéria"       name="subject" value={form.subject} onChange={handle} placeholder="Ex: Piano, Violão, Teoria Musical..." required error={errors.subject} />
 
       <div className="form-field">
-        <label className="form-label">Professor <span className="required-star" aria-hidden="true">*</span></label>
+        <label className="form-label">
+          Professor <span className="required-star" aria-hidden="true">*</span>
+        </label>
+        {/* FIX: field is teacher_id (snake_case) matching classController */}
         <select
-          value={form.teacherId}
-          onChange={(e) => setForm((p) => ({ ...p, teacherId: e.target.value }))}
-          className={`form-select${errors.teacherId ? " has-error" : ""}`}
+          value={form.teacher_id}
+          onChange={(e) => setForm((p) => ({ ...p, teacher_id: e.target.value }))}
+          className={`form-select${errors.teacher_id ? " has-error" : ""}`}
         >
           <option value="">Selecione um professor...</option>
-          {teachers.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          {teachers.map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
         </select>
-        {errors.teacherId && <span className="form-error" role="alert">{errors.teacherId}</span>}
+        {errors.teacher_id && <span className="form-error" role="alert">{errors.teacher_id}</span>}
       </div>
 
       <div className="form-row-actions">
         <button type="button" onClick={onCancel} className="btn btn--secondary">Cancelar</button>
-        <button type="submit" disabled={loading} className="btn btn--primary">{loading ? "Salvando..." : "Salvar"}</button>
+        <button type="submit" disabled={loading} className="btn btn--primary">
+          {loading ? "Salvando..." : "Salvar"}
+        </button>
       </div>
     </form>
   );
@@ -92,6 +99,7 @@ const Classes = () => {
 
   const handleSearch = (e) => { setSearch(e.target.value); setPage(1); };
 
+  /* FIX: filter only TEACHER role, sent uppercase */
   const fetchTeachers = async () => {
     try {
       const { data } = await api.get("/users", { params: { role: "TEACHER", limit: 200 } });
@@ -141,7 +149,7 @@ const Classes = () => {
   const columns = [
     { key: "name",            label: "Nome da Turma" },
     { key: "subject",         label: "Matéria"       },
-    { key: "teacherName",     label: "Professor"     },
+    { key: "teacherName",     label: "Professor",    render: (_, row) => row.teacher?.name ?? row.teacherName ?? "—" },
     { key: "enrollmentCount", label: "Alunos",       render: (val) => <span className="count-badge">{val ?? 0}</span> },
     { key: "createdAt",       label: "Criada em"     },
   ];
@@ -178,21 +186,33 @@ const Classes = () => {
       )}
 
       <Modal isOpen={modal === "create"} onClose={() => setModal(null)} title="Nova Turma">
-        <ClassForm teachers={teachers} onSubmit={handleCreate} onCancel={() => setModal(null)} loading={saving} />
+        <ClassForm
+          teachers={teachers} onSubmit={handleCreate}
+          onCancel={() => setModal(null)} loading={saving}
+        />
       </Modal>
 
       <Modal isOpen={modal === "edit"} onClose={() => setModal(null)} title="Editar Turma">
         <ClassForm
-          initial={{ name: selected?.name ?? "", subject: selected?.subject ?? "", teacherId: selected?.teacherId ?? "" }}
-          teachers={teachers} onSubmit={handleEdit} onCancel={() => setModal(null)} loading={saving}
+          initial={{
+            name:       selected?.name       ?? "",
+            subject:    selected?.subject    ?? "",
+            teacher_id: selected?.teacher_id ?? selected?.teacherId ?? "",
+          }}
+          teachers={teachers} onSubmit={handleEdit}
+          onCancel={() => setModal(null)} loading={saving}
         />
       </Modal>
 
       <Modal isOpen={modal === "delete"} onClose={() => setModal(null)} title="Excluir Turma" size="sm">
-        <p className="delete-confirm-text">Tem certeza que deseja excluir a turma <strong>{selected?.name}</strong>?</p>
+        <p className="delete-confirm-text">
+          Tem certeza que deseja excluir a turma <strong>{selected?.name}</strong>?
+        </p>
         <div className="form-row-actions">
           <button onClick={() => setModal(null)} className="btn btn--secondary">Cancelar</button>
-          <button onClick={handleDelete} disabled={saving} className="btn btn--danger">{saving ? "Excluindo..." : "Excluir"}</button>
+          <button onClick={handleDelete} disabled={saving} className="btn btn--danger">
+            {saving ? "Excluindo..." : "Excluir"}
+          </button>
         </div>
       </Modal>
     </div>

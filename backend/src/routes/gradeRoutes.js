@@ -1,21 +1,25 @@
-import { Router } from 'express';
-import { gradeController } from '../controllers/gradeController.js';
-import { authMiddleware } from '../middlewares/authMiddleware.js';
-import { roleMiddleware } from '../middlewares/roleMiddleware.js';
+import { Router } from "express";
+import { gradeController } from "../controllers/gradeController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { roleMiddleware } from "../middlewares/roleMiddleware.js";
 
 const router = Router();
 
-// Todas as rotas de nota exigem login
 router.use(authMiddleware);
 
-router.post('/', roleMiddleware('TEACHER'), gradeController.create); 
-router.get('/:id', gradeController.getById);
-router.put('/:id', roleMiddleware('TEACHER'), gradeController.update);
-router.delete('/:id', roleMiddleware('TEACHER'), gradeController.delete);
+// GET  /     — all roles (student sees own, teacher sees theirs, admin sees all)
+router.get("/",       gradeController.getAll);
 
-// Aluno: Pode ver suas próprias notas | Admin/Teacher: Podem ver todas
-router.get('/my-grades', gradeController.getAll); 
-//router.get('/', gradeController.getAll);
+// POST /     — TEACHER + ADMIN
+router.post("/",      roleMiddleware(["TEACHER", "ADMIN"]), gradeController.create);
 
+// GET  /:id
+router.get("/:id",    gradeController.getById);
+
+// PUT  /:id  — TEACHER + ADMIN
+router.put("/:id",    roleMiddleware(["TEACHER", "ADMIN"]), gradeController.update);
+
+// DELETE /:id — TEACHER + ADMIN
+router.delete("/:id", roleMiddleware(["TEACHER", "ADMIN"]), gradeController.delete);
 
 export default router;

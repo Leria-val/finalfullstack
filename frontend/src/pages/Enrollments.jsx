@@ -5,13 +5,13 @@ import api from "../services/api.js";
 
 /* ── EnrollForm ────────────────────────────────────────────────── */
 const EnrollForm = ({ students, classes, onSubmit, onCancel, loading }) => {
-  const [form, setForm]     = useState({ studentId: "", classId: "" });
+  const [form, setForm]     = useState({ student_id: "", class_id: "" });
   const [errors, setErrors] = useState({});
 
   const validate = () => {
     const errs = {};
-    if (!form.studentId) errs.studentId = "Selecione um aluno.";
-    if (!form.classId)   errs.classId   = "Selecione uma turma.";
+    if (!form.student_id) errs.student_id = "Selecione um aluno.";
+    if (!form.class_id)   errs.class_id   = "Selecione uma turma.";
     return errs;
   };
 
@@ -26,25 +26,39 @@ const EnrollForm = ({ students, classes, onSubmit, onCancel, loading }) => {
     <form onSubmit={submit} className="form-col" noValidate>
       <div className="form-field">
         <label className="form-label">Aluno <span className="required-star">*</span></label>
-        <select value={form.studentId} onChange={(e) => setForm((p) => ({ ...p, studentId: e.target.value }))} className={`form-select${errors.studentId ? " has-error" : ""}`}>
+        <select
+          value={form.student_id}
+          onChange={(e) => setForm((p) => ({ ...p, student_id: e.target.value }))}
+          className={`form-select${errors.student_id ? " has-error" : ""}`}
+        >
           <option value="">Selecione um aluno...</option>
-          {students.map((s) => <option key={s.id} value={s.id}>{s.name} — {s.enrollment}</option>)}
+          {students.map((s) => (
+            <option key={s.id} value={s.id}>{s.name} — {s.registration_number}</option>
+          ))}
         </select>
-        {errors.studentId && <span className="form-error" role="alert">{errors.studentId}</span>}
+        {errors.student_id && <span className="form-error" role="alert">{errors.student_id}</span>}
       </div>
 
       <div className="form-field">
         <label className="form-label">Turma <span className="required-star">*</span></label>
-        <select value={form.classId} onChange={(e) => setForm((p) => ({ ...p, classId: e.target.value }))} className={`form-select${errors.classId ? " has-error" : ""}`}>
+        <select
+          value={form.class_id}
+          onChange={(e) => setForm((p) => ({ ...p, class_id: e.target.value }))}
+          className={`form-select${errors.class_id ? " has-error" : ""}`}
+        >
           <option value="">Selecione uma turma...</option>
-          {classes.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.subject}</option>)}
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>{c.name} — {c.subject}</option>
+          ))}
         </select>
-        {errors.classId && <span className="form-error" role="alert">{errors.classId}</span>}
+        {errors.class_id && <span className="form-error" role="alert">{errors.class_id}</span>}
       </div>
 
       <div className="form-row-actions">
         <button type="button" onClick={onCancel} className="btn btn--secondary">Cancelar</button>
-        <button type="submit" disabled={loading} className="btn btn--primary">{loading ? "Matriculando..." : "Matricular"}</button>
+        <button type="submit" disabled={loading} className="btn btn--primary">
+          {loading ? "Matriculando..." : "Matricular"}
+        </button>
       </div>
     </form>
   );
@@ -99,7 +113,7 @@ const Enrollments = () => {
         api.get("/classes",  { params: { limit: 200 } }),
       ]);
       setStudents(sRes.data.students ?? []);
-      setClasses(cRes.data.classes ?? []);
+      setClasses(cRes.data.classes   ?? []);
     } catch (err) { console.error(err); }
   };
 
@@ -108,6 +122,7 @@ const Enrollments = () => {
   const handleCreate = async (form) => {
     setSaving(true);
     try {
+      // FIX: send student_id and class_id (snake_case) matching backend
       await api.post("/enrollments", form);
       setModal(null);
       setPage(1);
@@ -130,15 +145,17 @@ const Enrollments = () => {
   };
 
   const columns = [
-    { key: "studentName", label: "Aluno"          },
-    { key: "enrollment",  label: "Matrícula"       },
-    { key: "className",   label: "Turma"           },
-    { key: "subject",     label: "Matéria"         },
-    { key: "teacherName", label: "Professor"       },
+    { key: "studentName", label: "Aluno"           },
+    { key: "enrollment",  label: "Matrícula"        },
+    { key: "className",   label: "Turma"            },
+    { key: "subject",     label: "Matéria"          },
+    { key: "teacherName", label: "Professor"        },
     {
       key: "status", label: "Status",
       render: (val = "active") => (
-        <span className={STATUS_MAP[val] ?? STATUS_MAP.active}>{STATUS_LABEL[val] ?? "Ativa"}</span>
+        <span className={STATUS_MAP[val] ?? STATUS_MAP.active}>
+          {STATUS_LABEL[val] ?? "Ativa"}
+        </span>
       ),
     },
     { key: "createdAt", label: "Matriculado em" },
@@ -156,14 +173,12 @@ const Enrollments = () => {
         <button onClick={openCreate} className="btn btn--primary">+ Nova Matrícula</button>
       </div>
 
-      {/* FIX: consistent search box using .inline-search */}
       <div className="inline-search" style={{ marginBottom: 20 }}>
         <span className="inline-search-icon" aria-hidden="true">🔍</span>
         <input
           value={search} onChange={handleSearch}
           placeholder="Buscar por nome do aluno..."
           className="inline-search-input"
-          aria-label="Buscar matrícula"
         />
       </div>
 

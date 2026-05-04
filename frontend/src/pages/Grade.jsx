@@ -7,17 +7,17 @@ import api from "../services/api.js";
 
 /* ── GradeForm ─────────────────────────────────────────────────── */
 const GradeForm = ({ enrollments, onSubmit, onCancel, loading }) => {
-  const [form, setForm]     = useState({ enrollmentId: "", value: "", period: "", description: "" });
+  const [form, setForm]     = useState({ enrollment_id: "", value: "", period: "", description: "" });
   const [errors, setErrors] = useState({});
 
   const handle = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const validate = () => {
     const errs = {};
-    if (!form.enrollmentId)                                         errs.enrollmentId = "Selecione uma matrícula.";
-    if (form.value === "" || form.value === null)                   errs.value        = "Nota obrigatória.";
-    if (parseFloat(form.value) < 0 || parseFloat(form.value) > 10) errs.value        = "Nota deve ser entre 0 e 10.";
-    if (!form.period.trim())                                        errs.period       = "Período obrigatório.";
+    if (!form.enrollment_id)                                        errs.enrollment_id = "Selecione uma matrícula.";
+    if (form.value === "" || form.value === null)                   errs.value         = "Nota obrigatória.";
+    if (parseFloat(form.value) < 0 || parseFloat(form.value) > 10) errs.value         = "Nota deve ser entre 0 e 10.";
+    if (!form.period.trim())                                        errs.period        = "Período obrigatório.";
     return errs;
   };
 
@@ -25,33 +25,38 @@ const GradeForm = ({ enrollments, onSubmit, onCancel, loading }) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) return setErrors(errs);
+    // FIX: send enrollment_id (snake_case) matching gradeController
     onSubmit({ ...form, value: parseFloat(form.value) });
   };
 
   return (
     <form onSubmit={submit} className="form-col" noValidate>
       <div className="form-field">
-        <label className="form-label">Matrícula (Aluno) <span className="required-star">*</span></label>
+        <label className="form-label">
+          Matrícula (Aluno) <span className="required-star">*</span>
+        </label>
         <select
-          value={form.enrollmentId}
-          onChange={(e) => setForm((p) => ({ ...p, enrollmentId: e.target.value }))}
-          className={`form-select${errors.enrollmentId ? " has-error" : ""}`}
+          value={form.enrollment_id}
+          onChange={(e) => setForm((p) => ({ ...p, enrollment_id: e.target.value }))}
+          className={`form-select${errors.enrollment_id ? " has-error" : ""}`}
         >
           <option value="">Selecione uma matrícula...</option>
           {enrollments.map((e) => (
             <option key={e.id} value={e.id}>{e.studentName} — {e.className}</option>
           ))}
         </select>
-        {errors.enrollmentId && <span className="form-error" role="alert">{errors.enrollmentId}</span>}
+        {errors.enrollment_id && <span className="form-error" role="alert">{errors.enrollment_id}</span>}
       </div>
 
-      <Input label="Nota (0 — 10)" name="value"       type="number" value={form.value}       onChange={handle} placeholder="Ex: 8.5"                           required error={errors.value} />
-      <Input label="Período"       name="period"                    value={form.period}      onChange={handle} placeholder="Ex: 1º Bimestre, Prova Final..."   required error={errors.period} />
+      <Input label="Nota (0 — 10)" name="value"       type="number" value={form.value}       onChange={handle} placeholder="Ex: 8.5"                              required error={errors.value}  />
+      <Input label="Período"       name="period"                    value={form.period}      onChange={handle} placeholder="Ex: 1º Bimestre, Prova Final..."      required error={errors.period} />
       <Input label="Observação"    name="description"               value={form.description} onChange={handle} placeholder="Ex: Ótimo desempenho na prova prática." />
 
       <div className="form-row-actions">
         <button type="button" onClick={onCancel} className="btn btn--secondary">Cancelar</button>
-        <button type="submit" disabled={loading} className="btn btn--primary">{loading ? "Lançando..." : "Lançar Nota"}</button>
+        <button type="submit" disabled={loading} className="btn btn--primary">
+          {loading ? "Lançando..." : "Lançar Nota"}
+        </button>
       </div>
     </form>
   );
@@ -139,12 +144,12 @@ const Grade = () => {
   };
 
   const columns = [
-    { key: "studentName", label: "Aluno",      render: (_, row) => row.student?.name ?? "—"  },
-    { key: "className",   label: "Turma",      render: (_, row) => row.class?.name   ?? "—"  },
-    { key: "period",      label: "Período"                                                     },
-    { key: "formattedValue", label: "Nota",    render: (val) => <span className="grade-value">{val}</span> },
-    { key: "status",      label: "Status",     render: (val) => <span className={STATUS_CLS[val] ?? "badge badge--failed"}>{val}</span> },
-    { key: "description", label: "Observação", render: (val) => val ?? "—"                    },
+    { key: "studentName",    label: "Aluno",      render: (_, row) => row.student?.name ?? row.studentName ?? "—" },
+    { key: "className",      label: "Turma",      render: (_, row) => row.class?.name   ?? row.className   ?? "—" },
+    { key: "period",         label: "Período"                                                                       },
+    { key: "formattedValue", label: "Nota",       render: (val) => <span className="grade-value">{val}</span>      },
+    { key: "status",         label: "Status",     render: (val) => <span className={STATUS_CLS[val] ?? "badge badge--failed"}>{val}</span> },
+    { key: "description",    label: "Observação", render: (val) => val ?? "—"                                       },
   ];
 
   return (
@@ -187,7 +192,7 @@ const Grade = () => {
 
       <Modal isOpen={modal === "delete"} onClose={() => setModal(null)} title="Remover Nota" size="sm">
         <p className="delete-confirm-text">
-          Tem certeza que deseja remover a nota <strong>{selected?.formattedValue}</strong> de <strong>{selected?.student?.name}</strong>?
+          Tem certeza que deseja remover a nota <strong>{selected?.formattedValue}</strong> de <strong>{selected?.student?.name ?? selected?.studentName}</strong>?
         </p>
         <div className="form-row-actions">
           <button onClick={() => setModal(null)} className="btn btn--secondary">Cancelar</button>
